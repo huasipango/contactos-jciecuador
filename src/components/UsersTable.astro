@@ -80,6 +80,9 @@ const socialNetworks = [
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400 w-16">
+              #
+            </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
               Nombre
             </th>
@@ -92,11 +95,14 @@ const socialNetworks = [
           </tr>
         </thead>
         <tbody id="tableBody" class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
-          {users.map(user => (
+          {users.map((user, index) => (
             <tr 
               class="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" 
               data-email={user.email}
             >
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                {index + 1}
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                 {user.fullName}
               </td>
@@ -210,7 +216,14 @@ const socialNetworks = [
 
     // Mostrar solo las filas de la página actual
     allRows.forEach(row => row.style.display = 'none');
-    filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+    filteredRows.slice(startIndex, endIndex).forEach((row, idx) => {
+      row.style.display = '';
+      // Actualizar el número de la fila
+      const numberCell = row.querySelector('td:first-child');
+      if (numberCell) {
+        numberCell.textContent = (startIndex + idx + 1).toString();
+      }
+    });
   }
 
   function filterTable() {
