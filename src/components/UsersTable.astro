@@ -1,0 +1,89 @@
+---
+import { type User, type OrganizationalUnit } from '../types';
+
+interface Props {
+  users: User[];
+  orgUnits: OrganizationalUnit[];
+}
+
+const { users, orgUnits } = Astro.props;
+---
+
+<div class="w-full">
+  <div class="mb-4 flex flex-col sm:flex-row gap-4">
+    <input
+      type="text"
+      id="search"
+      placeholder="Buscar..."
+      class="p-2 border rounded-lg flex-1 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+    />
+    <select
+      id="orgUnit"
+      class="p-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+    >
+      <option value="">Todas las Organizaciones</option>
+      {orgUnits.map((unit) => (
+        <option value={unit.path}>{unit.name}</option>
+      ))}
+    </select>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border dark:border-gray-700">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <thead class="bg-gray-50 dark:bg-gray-800">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Nombres y Apellidos
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Unidad Organizativa
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Correo Electrónico
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+        {users.map((user) => (
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+              {user.fullName}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+              {user.organizationalUnit}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+              {user.email}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const searchInput = document.getElementById('search') as HTMLInputElement;
+  const orgUnitSelect = document.getElementById('orgUnit') as HTMLSelectElement;
+  const tableRows = document.querySelectorAll('tbody tr');
+
+  function filterTable() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedOrgUnit = orgUnitSelect.value.toLowerCase();
+
+    tableRows.forEach((row) => {
+      const cells = row.getElementsByTagName('td');
+      const matchesSearch = Array.from(cells).some(
+        (cell) => cell.textContent?.toLowerCase().includes(searchTerm)
+      );
+      const matchesOrgUnit =
+        selectedOrgUnit === '' ||
+        cells[1].textContent?.toLowerCase().includes(selectedOrgUnit);
+
+      row.style.display = matchesSearch && matchesOrgUnit ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('input', filterTable);
+  orgUnitSelect.addEventListener('change', filterTable);
+</script> 

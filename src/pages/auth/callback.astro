@@ -1,0 +1,36 @@
+---
+import { getTokenFromCode } from '../../utils/googleAdmin';
+
+// Asegura que la página se renderiza en el servidor
+export const prerender = false;
+
+const code = Astro.url.searchParams.get('code');
+let redirectTo = '/';
+
+if (!code) {
+  return Astro.redirect('/');
+}
+
+try {
+  const tokens = await getTokenFromCode(code);
+  if (!tokens.access_token) {
+    throw new Error('No access token received');
+  }
+  
+  // Guarda el token en una cookie segura
+  Astro.cookies.set('access_token', tokens.access_token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 3600 // 1 hora
+  });
+} catch (error) {
+  console.error('Error getting tokens:', error);
+  redirectTo = '/error';
+}
+
+return Astro.redirect(redirectTo);
+---
+
+<div>Redirecting...</div> 

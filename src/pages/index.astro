@@ -1,0 +1,48 @@
+---
+import Layout from '../layouts/Layout.astro';
+import UsersTable from '../components/UsersTable.astro';
+import { getUsers, getOrganizationalUnits, getAuthUrl } from '../utils/googleAdmin';
+
+// Asegura que la página se renderiza en el servidor
+export const prerender = false;
+
+const accessToken = Astro.cookies.get('access_token')?.value;
+
+let users = [];
+let orgUnits = [];
+let error = null;
+
+if (!accessToken) {
+  const authUrl = await getAuthUrl();
+  return Astro.redirect(authUrl);
+}
+
+try {
+  users = await getUsers(accessToken);
+  orgUnits = await getOrganizationalUnits(accessToken);
+} catch (e) {
+  // Si el token ha expirado o es inválido, limpiamos la cookie y redirigimos
+  if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
+    Astro.cookies.delete('access_token');
+    const authUrl = await getAuthUrl();
+    return Astro.redirect(authUrl);
+  }
+  error = e.message;
+}
+---
+
+<Layout title="Directorio JCI Ecuador">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center mb-8 dark:text-white">
+      Directorio de Contactos JCI Ecuador
+    </h1>
+    {error ? (
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">Error:</strong>
+        <span class="block sm:inline">{error}</span>
+      </div>
+    ) : (
+      <UsersTable users={users} orgUnits={orgUnits} />
+    )}
+  </main>
+</Layout> 
