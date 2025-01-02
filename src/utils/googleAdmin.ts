@@ -33,15 +33,54 @@ export async function getUsers(accessToken: string) {
       customer: 'my_customer',
       orderBy: 'familyName',
       viewType: 'domain_public',
+      maxResults: 500,
+      fields: `
+        users(
+          id,
+          primaryEmail,
+          name(fullName,givenName,familyName),
+          organizations,
+          orgUnitPath,
+          thumbnailPhotoUrl,
+          isMailboxSetup,
+          suspended
+        )
+      `.replace(/\s+/g, '')
     });
 
-    return response.data.users?.map(user => ({
-      fullName: `${user.name?.givenName} ${user.name?.familyName}`,
-      organizationalUnit: user.orgUnitPath || '',
-      email: user.primaryEmail || '',
-    })) || [];
+    console.log('Raw users response:', JSON.stringify(response.data, null, 2));
+
+    const users = response.data.users
+      ?.filter(user => 
+        user.isMailboxSetup && 
+        !user.suspended &&
+        user.orgUnitPath?.startsWith('/Organizaciones Locales/')
+      )
+      ?.map(user => {
+        const fullName = user.name?.fullName || 
+                        `${user.name?.givenName || ''} ${user.name?.familyName || ''}`.trim();
+
+        const orgName = user.orgUnitPath?.split('/').pop() || '';
+
+        return {
+          id: user.id || '',
+          fullName,
+          organizationalUnit: orgName,
+          email: user.primaryEmail || '',
+          photoUrl: user.thumbnailPhotoUrl || ''
+        };
+      })
+      .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+    console.log('Processed users:', JSON.stringify(users, null, 2));
+    console.log('Total users:', users?.length || 0);
+    return users || [];
+
   } catch (error) {
     console.error('Error fetching users:', error);
+    if (error.response?.data?.error) {
+      console.error('API Error Details:', error.response.data.error);
+    }
     return [];
   }
 }
@@ -53,16 +92,44 @@ export async function getOrganizationalUnits(accessToken: string) {
   try {
     const response = await admin.orgunits.list({
       customerId: 'my_customer',
+      type: 'all'
     });
 
-    return response.data.organizationUnits
-      ?.filter(unit => unit.parentOrgUnitPath === '/JCI Ecuador/Organizaciones Locales')
-      .map(unit => ({
-        name: unit.name || '',
-        path: unit.orgUnitPath || '',
-      })) || [];
+    console.log('Raw Org Units response:', response.data);
+
+    // Encontrar la unidad base "Organizaciones Locales"
+    const allUnits = response.data.organizationUnits || [];
+    const baseUnit = allUnits.find(unit => 
+      unit.name === 'Organizaciones Locales'
+    );
+
+    if (!baseUnit) {
+      console.log('No se encontró la unidad base "Organizaciones Locales"');
+      return [];
+    }
+
+    console.log('Found base unit:', baseUnit);
+
+    // Filtrar las unidades que son hijas directas de "Organizaciones Locales"
+    const localOrgs = allUnits
+      .filter(unit => unit.parentOrgUnitPath === baseUnit.orgUnitPath)
+      .map(unit => {
+        console.log('Processing org unit:', unit);
+        return {
+          name: unit.name || '',
+          path: unit.orgUnitPath || '',
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    console.log('Final processed org units:', localOrgs);
+    return localOrgs;
+
   } catch (error) {
     console.error('Error fetching organizational units:', error);
+    if (error.response?.data?.error) {
+      console.error('API Error Details:', error.response.data.error);
+    }
     return [];
   }
 } 

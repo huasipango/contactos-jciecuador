@@ -19,71 +19,82 @@ const { users, orgUnits } = Astro.props;
     />
     <select
       id="orgUnit"
-      class="p-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+      class="p-2 border rounded-lg min-w-[200px] dark:bg-gray-800 dark:border-gray-700 dark:text-white"
     >
       <option value="">Todas las Organizaciones</option>
       {orgUnits.map((unit) => (
-        <option value={unit.path}>{unit.name}</option>
+        <option value={unit.name.replace('JCI ', '')}>{unit.name}</option>
       ))}
     </select>
   </div>
 
   <div class="overflow-x-auto rounded-lg border dark:border-gray-700">
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-      <thead class="bg-gray-50 dark:bg-gray-800">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Nombres y Apellidos
-          </th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Unidad Organizativa
-          </th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Correo Electrónico
-          </th>
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
-        {users.map((user) => (
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-              {user.fullName}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-              {user.organizationalUnit}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-              {user.email}
-            </td>
+    {users.length === 0 ? (
+      <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+        No se encontraron usuarios en las organizaciones locales.
+      </div>
+    ) : (
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Nombres y Apellidos
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Unidad Organizativa
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Correo Electrónico
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700" id="usersTableBody">
+          {users.map((user) => (
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800" data-org={user.organizationalUnit}>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                {user.fullName}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                {user.organizationalUnit ? `JCI ${user.organizationalUnit}` : ''}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                {user.email}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
   </div>
 </div>
 
 <script>
   const searchInput = document.getElementById('search') as HTMLInputElement;
   const orgUnitSelect = document.getElementById('orgUnit') as HTMLSelectElement;
-  const tableRows = document.querySelectorAll('tbody tr');
+  const tableBody = document.getElementById('usersTableBody');
+  const rows = tableBody?.getElementsByTagName('tr');
 
   function filterTable() {
+    if (!rows) return;
+
     const searchTerm = searchInput.value.toLowerCase();
     const selectedOrgUnit = orgUnitSelect.value.toLowerCase();
 
-    tableRows.forEach((row) => {
+    Array.from(rows).forEach((row) => {
       const cells = row.getElementsByTagName('td');
+      const rowOrgUnit = row.getAttribute('data-org')?.toLowerCase() || '';
+      
       const matchesSearch = Array.from(cells).some(
         (cell) => cell.textContent?.toLowerCase().includes(searchTerm)
       );
-      const matchesOrgUnit =
-        selectedOrgUnit === '' ||
-        cells[1].textContent?.toLowerCase().includes(selectedOrgUnit);
+      
+      const matchesOrgUnit = !selectedOrgUnit || rowOrgUnit.includes(selectedOrgUnit);
 
       row.style.display = matchesSearch && matchesOrgUnit ? '' : 'none';
     });
   }
 
-  searchInput.addEventListener('input', filterTable);
-  orgUnitSelect.addEventListener('change', filterTable);
+  searchInput?.addEventListener('input', filterTable);
+  orgUnitSelect?.addEventListener('change', filterTable);
+  filterTable();
 </script> 

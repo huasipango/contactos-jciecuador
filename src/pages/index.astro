@@ -20,6 +20,8 @@ if (!accessToken) {
 try {
   users = await getUsers(accessToken);
   orgUnits = await getOrganizationalUnits(accessToken);
+  console.log('Fetched Users:', users.length);
+  console.log('Fetched Org Units:', orgUnits);
 } catch (e) {
   // Si el token ha expirado o es inválido, limpiamos la cookie y redirigimos
   if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
