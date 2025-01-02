@@ -29,17 +29,42 @@ export async function getUsers(accessToken: string) {
   const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
   
   try {
-    const response = await admin.users.list({
-      customer: 'my_customer',
-      orderBy: 'familyName',
-      viewType: 'domain_public',
-    });
+    let allUsers: any[] = [];
+    let pageToken: string | undefined;
 
-    return response.data.users?.map(user => ({
-      fullName: `${user.name?.givenName} ${user.name?.familyName}`,
-      organizationalUnit: user.orgUnitPath || '',
-      email: user.primaryEmail || '',
-    })) || [];
+    do {
+      const response = await admin.users.list({
+        customer: 'my_customer',
+        orderBy: 'familyName',
+        viewType: 'domain_public',
+        maxResults: 500,
+        pageToken,
+        fields: 'nextPageToken,users(primaryEmail,name/fullName,name/givenName,name/familyName,orgUnitPath,suspended)'
+      });
+
+      if (response.data.users) {
+        const activeUsers = response.data.users.filter(user => !user.suspended);
+        allUsers = allUsers.concat(activeUsers);
+      }
+      
+      pageToken = response.data.nextPageToken;
+    } while (pageToken);
+
+    // Procesar y ordenar usuarios
+    return allUsers
+      .map(user => ({
+        fullName: `${user.name?.givenName || ''} ${user.name?.familyName || ''}`.trim(),
+        organizationalUnit: user.orgUnitPath || '',
+        email: user.primaryEmail || '',
+        lastName: user.name?.familyName || ''
+      }))
+      .sort((a, b) => {
+        const lastNameCompare = a.lastName.localeCompare(b.lastName);
+        if (lastNameCompare !== 0) return lastNameCompare;
+        return a.fullName.localeCompare(b.fullName);
+      })
+      .map(({ lastName, ...user }) => user);
+
   } catch (error) {
     console.error('Error fetching users:', error);
     return [];

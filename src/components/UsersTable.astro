@@ -7,16 +7,68 @@ interface Props {
 }
 
 const { users } = Astro.props;
+
+// Array de redes sociales
+const socialNetworks = [
+  {
+    name: 'Facebook',
+    url: 'https://www.facebook.com/JCI.EC',
+    icon: 'fab fa-facebook'
+  },
+  {
+    name: 'Instagram',
+    url: 'https://www.instagram.com/jciecuador',
+    icon: 'fab fa-instagram'
+  },
+  {
+    name: 'X (Twitter)',
+    url: 'https://x.com/JCIEcuador/status/1873971655963484241',
+    icon: 'fab fa-x-twitter'
+  },
+  {
+    name: 'LinkedIn',
+    url: 'https://www.linkedin.com/company/jci-ecuador/posts/?feedView=all',
+    icon: 'fab fa-linkedin'
+  },
+  {
+    name: 'TikTok',
+    url: 'https://www.tiktok.com/@jci.ecuador',
+    icon: 'fab fa-tiktok'
+  }
+];
 ---
 
 <div class="space-y-4">
-  <div class="flex gap-4">
+  <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg mb-6">
+    <p class="text-blue-800 dark:text-blue-100 text-sm">
+      Esta aplicación muestra el directorio de contactos de los miembros de JCI Ecuador. 
+      Para copiar una dirección de correo electrónico, puede:
+      <ul class="list-disc ml-6 mt-2">
+        <li>Hacer clic en cualquier parte de la fila del usuario</li>
+        <li>O usar el botón "COPIAR CORREO" al final de cada fila</li>
+      </ul>
+      Use el buscador para filtrar por nombre o correo electrónico.
+    </p>
+  </div>
+
+  <div class="flex gap-4 items-center">
     <input
       type="text"
       id="searchInput"
       placeholder="Buscar por nombre o correo..."
       class="w-full px-4 py-2 rounded-lg border dark:border-gray-700 dark:bg-gray-800 dark:text-white"
     />
+    <div class="flex items-center gap-2">
+      <label class="text-sm text-gray-600 dark:text-gray-400">Mostrar:</label>
+      <select
+        id="pageSize"
+        class="px-3 py-2 rounded-lg border dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      >
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </div>
   </div>
 
   <div class="overflow-x-auto rounded-lg border dark:border-gray-700">
@@ -39,9 +91,12 @@ const { users } = Astro.props;
             </th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+        <tbody id="tableBody" class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
           {users.map(user => (
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+            <tr 
+              class="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" 
+              data-email={user.email}
+            >
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                 {user.fullName}
               </td>
@@ -62,57 +117,207 @@ const { users } = Astro.props;
       </table>
     )}
   </div>
+
+  <div class="flex items-center justify-between mt-4">
+    <div class="text-sm text-gray-700 dark:text-gray-300">
+      Mostrando <span id="startIndex">0</span> a <span id="endIndex">0</span> de <span id="totalItems">0</span> registros
+    </div>
+    <div class="flex gap-2">
+      <button
+        id="prevPage"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+        disabled
+      >
+        Anterior
+      </button>
+      <button
+        id="nextPage"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+        disabled
+      >
+        Siguiente
+      </button>
+    </div>
+  </div>
+
+  <!-- Pie de página -->
+  <footer class="mt-8 border-t dark:border-gray-700 pt-6">
+    <!-- Primera fila - Redes sociales -->
+    <div class="text-center mb-4">
+      <p class="text-gray-700 dark:text-gray-300 mb-3">
+        ¿Ya estás siguiendo las redes sociales de JCI Ecuador?
+      </p>
+      <div class="flex justify-center gap-4">
+        {socialNetworks.map(network => (
+          <a
+            href={network.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-gray-600 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+            title={network.name}
+          >
+            <i class={`${network.icon} text-2xl`}></i>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- Segunda fila - Créditos -->
+    <div 
+      id="credits"
+      class="text-center text-sm text-gray-600 dark:text-gray-400 pb-4 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+    >
+      Hecho con ❤️ por <a 
+        href="https://www.linkedin.com/in/anthoro/" 
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        id="author-link"
+      >Anthony Cabrera</a>, Director de Tecnologías de Información JCI Ecuador 25.
+    </div>
+  </footer>
 </div>
 
 <script>
   const searchInput = document.getElementById('searchInput') as HTMLInputElement;
-  const tableRows = document.querySelectorAll('tbody tr');
-  const copyButtons = document.querySelectorAll('.copy-button');
+  const pageSizeSelect = document.getElementById('pageSize') as HTMLSelectElement;
+  const tableBody = document.getElementById('tableBody') as HTMLTableSectionElement;
+  const prevPageBtn = document.getElementById('prevPage') as HTMLButtonElement;
+  const nextPageBtn = document.getElementById('nextPage') as HTMLButtonElement;
+  const startIndexSpan = document.getElementById('startIndex') as HTMLSpanElement;
+  const endIndexSpan = document.getElementById('endIndex') as HTMLSpanElement;
+  const totalItemsSpan = document.getElementById('totalItems') as HTMLSpanElement;
+  
+  let currentPage = 1;
+  let pageSize = 25;
+  let filteredRows: HTMLTableRowElement[] = [];
+  const allRows = Array.from(tableBody.querySelectorAll('tr'));
 
-  // Función de búsqueda
+  function updatePagination() {
+    const totalItems = filteredRows.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+    // Actualizar navegación
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage === totalPages;
+
+    // Actualizar información de registros
+    startIndexSpan.textContent = totalItems === 0 ? '0' : (startIndex + 1).toString();
+    endIndexSpan.textContent = endIndex.toString();
+    totalItemsSpan.textContent = totalItems.toString();
+
+    // Mostrar solo las filas de la página actual
+    allRows.forEach(row => row.style.display = 'none');
+    filteredRows.slice(startIndex, endIndex).forEach(row => row.style.display = '');
+  }
+
   function filterTable() {
     const searchTerm = searchInput.value.toLowerCase();
     
-    tableRows.forEach(row => {
+    filteredRows = allRows.filter(row => {
       const name = row.children[0].textContent?.toLowerCase() || '';
       const email = row.children[1].textContent?.toLowerCase() || '';
-      
-      if (name.includes(searchTerm) || email.includes(searchTerm)) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
+      return name.includes(searchTerm) || email.includes(searchTerm);
     });
+
+    currentPage = 1;
+    updatePagination();
   }
 
-  // Función para copiar al portapapeles
-  async function copyToClipboard(email: string, button: HTMLButtonElement) {
-    try {
-      await navigator.clipboard.writeText(email);
-      
-      // Feedback visual
-      const originalText = button.textContent;
-      button.textContent = '¡COPIADO!';
-      button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-      button.classList.add('bg-green-500', 'hover:bg-green-600');
-      
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.classList.remove('bg-green-500', 'hover:bg-green-600');
-        button.classList.add('bg-blue-500', 'hover:bg-blue-600');
-      }, 2000);
-    } catch (err) {
-      console.error('Error al copiar:', err);
-    }
+  // Función para mostrar feedback visual en la fila
+  function showRowFeedback(row: HTMLTableRowElement) {
+    const originalBackground = row.style.backgroundColor;
+    row.style.backgroundColor = 'rgb(134 239 172)'; // verde claro
+    setTimeout(() => {
+      row.style.backgroundColor = originalBackground;
+    }, 200);
   }
 
   // Event listeners
   searchInput?.addEventListener('input', filterTable);
   
-  copyButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const email = button.getAttribute('data-email') || '';
-      copyToClipboard(email, button as HTMLButtonElement);
+  pageSizeSelect?.addEventListener('change', () => {
+    pageSize = parseInt(pageSizeSelect.value);
+    currentPage = 1;
+    updatePagination();
+  });
+
+  prevPageBtn?.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+    }
+  });
+
+  nextPageBtn?.addEventListener('click', () => {
+    const totalPages = Math.ceil(filteredRows.length / pageSize);
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+    }
+  });
+
+  document.querySelectorAll('tbody tr').forEach(row => {
+    row.addEventListener('click', async (e) => {
+      // No ejecutar si se hizo clic en el botón
+      if (!(e.target as HTMLElement).closest('.copy-button')) {
+        const email = row.getAttribute('data-email') || '';
+        try {
+          await navigator.clipboard.writeText(email);
+          showRowFeedback(row);
+          
+          // Encontrar y actualizar el botón correspondiente
+          const button = row.querySelector('.copy-button') as HTMLButtonElement;
+          if (button) {
+            const originalText = button.textContent;
+            button.textContent = '¡COPIADO!';
+            button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            button.classList.add('bg-green-500', 'hover:bg-green-600');
+            
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.classList.remove('bg-green-500', 'hover:bg-green-600');
+              button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }, 2000);
+          }
+        } catch (err) {
+          console.error('Error al copiar:', err);
+        }
+      }
     });
   });
-</script> 
+
+  // Inicialización
+  filteredRows = allRows;
+  updatePagination();
+
+  // Importar canvas-confetti
+  import confetti from 'canvas-confetti';
+
+  // Función para lanzar confetti
+  function launchConfetti() {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  }
+
+  // Event listener para el área de créditos
+  const creditsArea = document.getElementById('credits');
+  const authorLink = document.getElementById('author-link');
+
+  creditsArea?.addEventListener('click', (e) => {
+    // No lanzar confetti si se hizo clic en el enlace del autor
+    if (!(e.target as HTMLElement).closest('#author-link')) {
+      launchConfetti();
+    }
+  });
+</script>
+
+<style>
+  /* Asegurarse de que los íconos de Font Awesome se carguen correctamente */
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+</style> 
