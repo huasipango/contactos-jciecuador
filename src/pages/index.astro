@@ -21,7 +21,6 @@ try {
   users = await getUsers(accessToken);
   orgUnits = await getOrganizationalUnits(accessToken);
 } catch (e) {
-  // Si el token ha expirado o es inválido, limpiamos la cookie y redirigimos
   if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
     Astro.cookies.delete('access_token');
     const authUrl = await getAuthUrl();
@@ -31,7 +30,7 @@ try {
 }
 ---
 
-<Layout title="Directorio JCI Ecuador">
+<Layout title="Directorio de Contactos">
   <main class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-center mb-8 dark:text-white">
       Directorio de Contactos JCI Ecuador

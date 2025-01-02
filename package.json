@@ -7,6 +7,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
+    "@astrojs/netlify": "^6.0.1",
     "@astrojs/tailwind": "^5.1.4",
     "@heroicons/react": "^2.2.0",
     "astro": "^5.1.1",
