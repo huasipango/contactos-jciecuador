@@ -14,7 +14,8 @@ export async function getAuthUrl() {
       'https://www.googleapis.com/auth/admin.directory.user.readonly',
       'https://www.googleapis.com/auth/admin.directory.orgunit.readonly'
     ],
-    prompt: 'consent'
+    prompt: 'consent',
+    redirect_uri: import.meta.env.PUBLIC_GOOGLE_REDIRECT_URI
   });
 }
 
