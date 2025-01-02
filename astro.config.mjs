@@ -5,7 +5,7 @@ import netlify from '@astrojs/netlify';
 
 export default defineConfig({
   integrations: [tailwind()],
-  site: 'https://contactos.jciecuador.com',
+  site: 'https://contactos-jciecuador.netlify.app',
   output: 'server',
 
   vite: {
