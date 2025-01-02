@@ -6,84 +6,113 @@ interface Props {
   orgUnits: OrganizationalUnit[];
 }
 
-const { users, orgUnits } = Astro.props;
+const { users } = Astro.props;
 ---
 
-<div class="w-full">
-  <div class="mb-4 flex flex-col sm:flex-row gap-4">
+<div class="space-y-4">
+  <div class="flex gap-4">
     <input
       type="text"
-      id="search"
-      placeholder="Buscar..."
-      class="p-2 border rounded-lg flex-1 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+      id="searchInput"
+      placeholder="Buscar por nombre o correo..."
+      class="w-full px-4 py-2 rounded-lg border dark:border-gray-700 dark:bg-gray-800 dark:text-white"
     />
-    <select
-      id="orgUnit"
-      class="p-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-    >
-      <option value="">Todas las Organizaciones</option>
-      {orgUnits.map((unit) => (
-        <option value={unit.path}>{unit.name}</option>
-      ))}
-    </select>
   </div>
 
   <div class="overflow-x-auto rounded-lg border dark:border-gray-700">
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-      <thead class="bg-gray-50 dark:bg-gray-800">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Nombres y Apellidos
-          </th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Unidad Organizativa
-          </th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Correo Electrónico
-          </th>
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
-        {users.map((user) => (
-          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-              {user.fullName}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-              {user.organizationalUnit}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-              {user.email}
-            </td>
+    {users.length === 0 ? (
+      <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+        No se encontraron usuarios.
+      </div>
+    ) : (
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+              Nombre
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+              Correo Electrónico
+            </th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+              Acciones
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+          {users.map(user => (
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                {user.fullName}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                {user.email}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                <button
+                  class="copy-button bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
+                  data-email={user.email}
+                >
+                  COPIAR CORREO
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
   </div>
 </div>
 
 <script>
-  const searchInput = document.getElementById('search') as HTMLInputElement;
-  const orgUnitSelect = document.getElementById('orgUnit') as HTMLSelectElement;
+  const searchInput = document.getElementById('searchInput') as HTMLInputElement;
   const tableRows = document.querySelectorAll('tbody tr');
+  const copyButtons = document.querySelectorAll('.copy-button');
 
+  // Función de búsqueda
   function filterTable() {
     const searchTerm = searchInput.value.toLowerCase();
-    const selectedOrgUnit = orgUnitSelect.value.toLowerCase();
-
-    tableRows.forEach((row) => {
-      const cells = row.getElementsByTagName('td');
-      const matchesSearch = Array.from(cells).some(
-        (cell) => cell.textContent?.toLowerCase().includes(searchTerm)
-      );
-      const matchesOrgUnit =
-        selectedOrgUnit === '' ||
-        cells[1].textContent?.toLowerCase().includes(selectedOrgUnit);
-
-      row.style.display = matchesSearch && matchesOrgUnit ? '' : 'none';
+    
+    tableRows.forEach(row => {
+      const name = row.children[0].textContent?.toLowerCase() || '';
+      const email = row.children[1].textContent?.toLowerCase() || '';
+      
+      if (name.includes(searchTerm) || email.includes(searchTerm)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
     });
   }
 
-  searchInput.addEventListener('input', filterTable);
-  orgUnitSelect.addEventListener('change', filterTable);
+  // Función para copiar al portapapeles
+  async function copyToClipboard(email: string, button: HTMLButtonElement) {
+    try {
+      await navigator.clipboard.writeText(email);
+      
+      // Feedback visual
+      const originalText = button.textContent;
+      button.textContent = '¡COPIADO!';
+      button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+      button.classList.add('bg-green-500', 'hover:bg-green-600');
+      
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove('bg-green-500', 'hover:bg-green-600');
+        button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+      }, 2000);
+    } catch (err) {
+      console.error('Error al copiar:', err);
+    }
+  }
+
+  // Event listeners
+  searchInput?.addEventListener('input', filterTable);
+  
+  copyButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const email = button.getAttribute('data-email') || '';
+      copyToClipboard(email, button as HTMLButtonElement);
+    });
+  });
 </script> 
