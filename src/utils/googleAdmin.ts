@@ -20,9 +20,22 @@ export async function getAuthUrl() {
 }
 
 export async function getTokenFromCode(code: string) {
-  const { tokens } = await oauth2Client.getToken(code);
-  oauth2Client.setCredentials(tokens);
-  return tokens;
+  try {
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: import.meta.env.PUBLIC_GOOGLE_REDIRECT_URI
+    });
+    
+    if (!tokens.access_token) {
+      throw new Error('No access token received');
+    }
+    
+    oauth2Client.setCredentials(tokens);
+    return tokens;
+  } catch (error) {
+    console.error('Error in getTokenFromCode:', error);
+    throw error;
+  }
 }
 
 export async function getUsers(accessToken: string) {

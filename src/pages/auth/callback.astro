@@ -1,7 +1,16 @@
 ---
 import { getTokenFromCode } from '../../utils/googleAdmin';
 
+// Asegura que la página se renderiza en el servidor
+export const prerender = false;
+
 const code = Astro.url.searchParams.get('code');
+const error = Astro.url.searchParams.get('error');
+
+if (error) {
+  console.error('OAuth error:', error);
+  return Astro.redirect('/?error=auth');
+}
 
 if (!code) {
   return Astro.redirect('/');
@@ -10,14 +19,30 @@ if (!code) {
 try {
   const tokens = await getTokenFromCode(code);
   if (tokens.access_token) {
-    Astro.cookies.set('access_token', tokens.access_token);
-    return Astro.redirect('/');
+    // Configurar la cookie con opciones más seguras
+    Astro.cookies.set('access_token', tokens.access_token, {
+      path: '/',
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 3600 // 1 hora
+    });
+    
+    return Astro.redirect('/?auth=success');
   }
 } catch (error) {
   console.error('Error getting tokens:', error);
+  return Astro.redirect('/?error=token');
 }
 
-return Astro.redirect('/');
+return Astro.redirect('/?error=unknown');
 ---
 
-<div>Redirecting...</div> 
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Procesando autenticación...</title>
+</head>
+<body>
+  <p>Procesando autenticación, por favor espere...</p>
+</body>
+</html> 
