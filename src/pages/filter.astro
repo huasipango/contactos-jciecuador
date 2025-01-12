@@ -56,9 +56,10 @@ try {
               <span class="text-gray-700 dark:text-gray-300">Seleccionar Organización:</span>
               <select
                 name="orgUnit"
+                id="orgUnitSelect"
                 class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
               >
-                <option value="">Seleccione una organización</option>
+                <option value="">Todas las organizaciones</option>
                 {orgUnits.map((unit: any) => (
                   <option 
                     value={unit.orgUnitPath}
@@ -69,12 +70,6 @@ try {
                 ))}
               </select>
             </label>
-            <button
-              type="submit"
-              class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
-            >
-              Filtrar Usuarios
-            </button>
           </form>
         </div>
 
@@ -102,15 +97,16 @@ try {
 </Layout>
 
 <script>
-  const form = document.getElementById('filterForm');
+  const select = document.getElementById('orgUnitSelect');
   
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const orgUnit = formData.get('orgUnit');
+  select?.addEventListener('change', (e) => {
+    const target = e.target as HTMLSelectElement;
+    const orgUnit = target.value;
     
     if (orgUnit) {
-      window.location.href = `/filter?orgUnit=${encodeURIComponent(orgUnit.toString())}`;
+      window.location.href = `/filter?orgUnit=${encodeURIComponent(orgUnit)}`;
+    } else {
+      window.location.href = '/filter';
     }
   });
 </script> 
