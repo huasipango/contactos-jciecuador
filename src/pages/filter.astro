@@ -1,0 +1,116 @@
+---
+import Layout from '../layouts/Layout.astro';
+import UsersTable from '../components/UsersTable.astro';
+import { listAllOrganizationUnits, getUsersByOrgUnit, getAuthUrl } from '../utils/googleAdmin';
+
+export const prerender = false;
+
+const accessToken = Astro.cookies.get('access_token')?.value;
+let orgUnits: any[] = [];
+let users: any[] = [];
+let error = null;
+let selectedOrgUnit = '';
+
+if (!accessToken) {
+  const authUrl = await getAuthUrl();
+  return Astro.redirect(authUrl);
+}
+
+try {
+  const orgUnitsData = await listAllOrganizationUnits(accessToken);
+  orgUnits = orgUnitsData.organizationUnits || [];
+  
+  // Si hay un orgUnitPath en la URL, cargamos sus usuarios
+  const urlParams = new URL(Astro.request.url).searchParams;
+  selectedOrgUnit = urlParams.get('orgUnit') || '';
+  
+  if (selectedOrgUnit) {
+    users = await getUsersByOrgUnit(accessToken, selectedOrgUnit);
+  }
+} catch (e: any) {
+  if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
+    Astro.cookies.delete('access_token');
+    const authUrl = await getAuthUrl();
+    return Astro.redirect(authUrl);
+  }
+  error = e.message;
+}
+---
+
+<Layout title="Filtrar por Organización">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center mb-8 dark:text-white">
+      Filtrar Usuarios por Organización
+    </h1>
+
+    {error ? (
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        <strong class="font-bold">Error:</strong>
+        <span class="block sm:inline">{error}</span>
+      </div>
+    ) : (
+      <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <form id="filterForm" class="space-y-4">
+            <label class="block">
+              <span class="text-gray-700 dark:text-gray-300">Seleccionar Organización:</span>
+              <select
+                name="orgUnit"
+                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+              >
+                <option value="">Seleccione una organización</option>
+                {orgUnits.map((unit: any) => (
+                  <option 
+                    value={unit.orgUnitPath}
+                    selected={unit.orgUnitPath === selectedOrgUnit}
+                  >
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
+            >
+              Filtrar Usuarios
+            </button>
+          </form>
+        </div>
+
+        {selectedOrgUnit && (
+          <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+            <p class="text-blue-800 dark:text-blue-100">
+              Mostrando usuarios de: <strong>{selectedOrgUnit}</strong>
+            </p>
+          </div>
+        )}
+
+        <UsersTable users={users} orgUnits={orgUnits} />
+      </div>
+    )}
+
+    <div class="mt-8 text-center">
+      <a
+        href="/"
+        class="inline-block bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors"
+      >
+        Volver al Directorio
+      </a>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const form = document.getElementById('filterForm');
+  
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const orgUnit = formData.get('orgUnit');
+    
+    if (orgUnit) {
+      window.location.href = `/filter?orgUnit=${encodeURIComponent(orgUnit.toString())}`;
+    }
+  });
+</script> 

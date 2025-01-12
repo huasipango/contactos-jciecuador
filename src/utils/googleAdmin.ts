@@ -168,4 +168,49 @@ export async function listAllOrganizationUnits(accessToken: string) {
   } catch (error) {
     throw error;
   }
+}
+
+export async function getUsersByOrgUnit(accessToken: string, orgUnitPath: string) {
+  oauth2Client.setCredentials({ access_token: accessToken });
+  const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
+  
+  try {
+    let allUsers: any[] = [];
+
+    // Obtenemos todos los usuarios con sus orgUnitPath
+    const response = await admin.users.list({
+      customer: 'my_customer',
+      orderBy: 'familyName',
+      viewType: 'admin_view',
+      maxResults: 500,
+      fields: 'users(primaryEmail,name/fullName,name/givenName,name/familyName,orgUnitPath,suspended,id)'  // Aseguramos que se incluya orgUnitPath
+    });
+    if (response.data.users) {
+      allUsers = response.data.users.filter(user => {
+        const matches = !user.suspended && user.orgUnitPath === orgUnitPath;
+        return matches;
+      });
+    }
+
+    const processedUsers = allUsers
+      .map(user => ({
+        fullName: `${user.name?.givenName || ''} ${user.name?.familyName || ''}`.trim(),
+        organizationalUnit: user.orgUnitPath || '',
+        email: user.primaryEmail || '',
+        lastName: user.name?.familyName || ''
+      }))
+      .sort((a, b) => {
+        const lastNameCompare = a.lastName.localeCompare(b.lastName);
+        if (lastNameCompare !== 0) return lastNameCompare;
+        return a.fullName.localeCompare(b.fullName);
+      })
+      .map(({ lastName, ...user }) => user);
+
+    return processedUsers;
+
+  } catch (error: any) {
+    console.error('Error general en getUsersByOrgUnit:', error.message);
+    console.error('Error completo:', error);
+    throw error;
+  }
 } 
