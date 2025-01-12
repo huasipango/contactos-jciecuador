@@ -34,26 +34,36 @@ try {
   <main class="min-h-screen bg-transparent">
     {/* Header con logos */}
     <div class="container mx-auto px-4 py-8">
-      <div class="flex justify-between items-center mb-8">
+      <div class="flex justify-between items-center mb-8 relative">
         <img 
           src="/logo-color-jci.png" 
           alt="JCI Ecuador Logo" 
-          class="h-24 dark:hidden"
+          class="h-24 dark:hidden z-10"
         />
         <img 
           src="/logo-blanco-jci.png" 
           alt="JCI Ecuador Logo" 
-          class="h-24 hidden dark:block"
+          class="h-24 hidden dark:block z-10"
         />
+        
+        {/* Diseño horizontal en el centro */}
+        <div class="absolute left-0 right-0 hidden md:block" style="top: 50%; transform: translateY(-50%);">
+          <img 
+            src="/diseno-horizontal.png" 
+            alt="Diseño JCI Ecuador" 
+            class="w-full h-20 object-contain"
+          />
+        </div>
+
         <img 
           src="/somos-li-color.png" 
           alt="Somos LI" 
-          class="h-20 dark:hidden"
+          class="h-20 dark:hidden z-10"
         />
         <img 
           src="/somos-li-blanco.png" 
           alt="Somos LI" 
-          class="h-20 hidden dark:block"
+          class="h-20 hidden dark:block z-10"
         />
       </div>
 
