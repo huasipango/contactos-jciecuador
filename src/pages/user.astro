@@ -1,0 +1,102 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getUser, getAuthUrl } from '../utils/googleAdmin';
+
+// Asegura que la página se renderiza en el servidor
+export const prerender = false;
+
+const accessToken = Astro.cookies.get('access_token')?.value;
+let userData = null;
+let error = null;
+let isAdmin = false;
+
+if (!accessToken) {
+  const authUrl = await getAuthUrl();
+  return Astro.redirect(authUrl);
+}
+
+try {
+  userData = await getUser(accessToken, 'acabrera@jciecuador.com');
+  isAdmin = true;
+} catch (e) {
+  if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
+    Astro.cookies.delete('access_token');
+    const authUrl = await getAuthUrl();
+    return Astro.redirect(authUrl);
+  }
+  error = e.message;
+}
+---
+
+<Layout title="Detalles de Usuario">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center mb-8 dark:text-white">
+      Detalles del Usuario
+    </h1>
+
+    {!isAdmin ? (
+      <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded relative mb-4">
+        <strong class="font-bold">Acceso Restringido:</strong>
+        <span class="block sm:inline ml-2">
+          Esta página solo está disponible para administradores del directorio. Si necesitas acceso, contacta al administrador del sistema.
+        </span>
+      </div>
+    ) : error ? (
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">Error:</strong>
+        <span class="block sm:inline">{error}</span>
+      </div>
+    ) : (
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div class="mb-4 flex justify-between items-center">
+          <h2 class="text-xl font-semibold dark:text-white">
+            Respuesta del API Directory
+          </h2>
+          <button
+            id="copyButton"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
+          >
+            Copiar JSON
+          </button>
+        </div>
+        <pre
+          class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm dark:text-gray-300"
+        >{JSON.stringify(userData, null, 2)}</pre>
+      </div>
+    )}
+
+    <div class="mt-8 text-center">
+      <a
+        href="/"
+        class="inline-block bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors"
+      >
+        Volver al Directorio
+      </a>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const copyButton = document.getElementById('copyButton');
+  const preElement = document.querySelector('pre');
+
+  copyButton?.addEventListener('click', async () => {
+    if (preElement) {
+      try {
+        await navigator.clipboard.writeText(preElement.textContent || '');
+        const originalText = copyButton.textContent;
+        copyButton.textContent = '¡Copiado!';
+        copyButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+        copyButton.classList.add('bg-green-500', 'hover:bg-green-600');
+        
+        setTimeout(() => {
+          copyButton.textContent = originalText;
+          copyButton.classList.remove('bg-green-500', 'hover:bg-green-600');
+          copyButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+        }, 2000);
+      } catch (err) {
+        console.error('Error al copiar:', err);
+      }
+    }
+  });
+</script> 

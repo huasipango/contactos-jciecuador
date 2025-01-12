@@ -12,7 +12,9 @@ export async function getAuthUrl() {
     access_type: 'offline',
     scope: [
       'https://www.googleapis.com/auth/admin.directory.user.readonly',
-      'https://www.googleapis.com/auth/admin.directory.orgunit.readonly'
+      'https://www.googleapis.com/auth/admin.directory.orgunit.readonly',
+      'https://www.googleapis.com/auth/admin.directory.user',
+      'https://www.googleapis.com/auth/admin.directory.group.readonly'
     ],
     prompt: 'consent',
     redirect_uri: import.meta.env.PUBLIC_GOOGLE_REDIRECT_URI
@@ -33,7 +35,6 @@ export async function getTokenFromCode(code: string) {
     oauth2Client.setCredentials(tokens);
     return tokens;
   } catch (error) {
-    console.error('Error in getTokenFromCode:', error);
     throw error;
   }
 }
@@ -80,7 +81,6 @@ export async function getUsers(accessToken: string) {
       .map(({ lastName, ...user }) => user);
 
   } catch (error) {
-    console.error('Error fetching users:', error);
     return [];
   }
 }
@@ -101,7 +101,71 @@ export async function getOrganizationalUnits(accessToken: string) {
         path: unit.orgUnitPath || '',
       })) || [];
   } catch (error) {
-    console.error('Error fetching organizational units:', error);
     return [];
+  }
+}
+
+export async function getUser(accessToken: string, userKey: string) {
+  oauth2Client.setCredentials({ access_token: accessToken });
+  const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
+  
+  try {
+    const response = await admin.users.get({
+      userKey,
+      customer: 'my_customer',
+      viewType: 'admin_view',
+      fields: '*'
+    });
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getOrganizationUnit(accessToken: string, orgUnitId: string) {
+  oauth2Client.setCredentials({ access_token: accessToken });
+  const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
+  
+  try {
+    const listResponse = await admin.orgunits.list({
+      customerId: 'my_customer',
+      type: 'all'
+    });
+
+    const orgUnit = listResponse.data.organizationUnits?.find(
+      unit => unit.orgUnitId === orgUnitId
+    );
+
+    if (!orgUnit?.orgUnitPath) {
+      throw new Error(`No se encontró la unidad organizativa con ID: ${orgUnitId}`);
+    }
+
+    const response = await admin.orgunits.get({
+      customerId: 'my_customer',
+      orgUnitPath: orgUnit.orgUnitPath.substring(1),
+      fields: '*'
+    });
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function listAllOrganizationUnits(accessToken: string) {
+  oauth2Client.setCredentials({ access_token: accessToken });
+  const admin = google.admin({ version: 'directory_v1', auth: oauth2Client });
+  
+  try {
+    const response = await admin.orgunits.list({
+      customerId: 'my_customer',
+      type: 'all',  // Para obtener todas las unidades organizativas
+      fields: '*'   // Obtener todos los campos disponibles
+    });
+
+    return response.data;
+  } catch (error) {
+    throw error;
   }
 } 
