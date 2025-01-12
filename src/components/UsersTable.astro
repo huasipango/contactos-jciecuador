@@ -105,10 +105,16 @@ const socialNetworks = [
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 {index + 1}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+              <td 
+                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
+                data-fullname={user.fullName}
+              >
                 {user.fullName}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              <td 
+                class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                data-email={user.email}
+              >
                 {user.email}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
@@ -187,147 +193,32 @@ const socialNetworks = [
 </div>
 
 <script>
-  const searchInput = document.getElementById('searchInput') as HTMLInputElement;
-  const pageSizeSelect = document.getElementById('pageSize') as HTMLSelectElement;
-  const tableBody = document.getElementById('tableBody') as HTMLTableSectionElement;
-  const prevPageBtn = document.getElementById('prevPage') as HTMLButtonElement;
-  const nextPageBtn = document.getElementById('nextPage') as HTMLButtonElement;
-  const startIndexSpan = document.getElementById('startIndex') as HTMLSpanElement;
-  const endIndexSpan = document.getElementById('endIndex') as HTMLSpanElement;
-  const totalItemsSpan = document.getElementById('totalItems') as HTMLSpanElement;
-  
-  let currentPage = 1;
-  let pageSize = 25;
-  let filteredRows: HTMLTableRowElement[] = [];
-  const allRows = Array.from(tableBody.querySelectorAll('tr'));
+  const searchInput = document.getElementById('searchInput');
+  const tableRows = document.querySelectorAll('tbody tr');
 
-  function updatePagination() {
-    const totalItems = filteredRows.length;
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalItems);
+  searchInput?.addEventListener('input', (e) => {
+    const searchTerm = (e.target as HTMLInputElement).value.toLowerCase().trim();
 
-    // Actualizar navegación
-    prevPageBtn.disabled = currentPage === 1;
-    nextPageBtn.disabled = currentPage === totalPages;
+    tableRows.forEach((row) => {
+      // Obtenemos los valores directamente de los atributos data-*
+      const fullName = row.querySelector('[data-fullname]')?.getAttribute('data-fullname')?.toLowerCase() || '';
+      const email = row.querySelector('[data-email]')?.getAttribute('data-email')?.toLowerCase() || '';
+      const orgUnit = row.querySelector('[data-orgunit]')?.getAttribute('data-orgunit')?.toLowerCase() || '';
 
-    // Actualizar información de registros
-    startIndexSpan.textContent = totalItems === 0 ? '0' : (startIndex + 1).toString();
-    endIndexSpan.textContent = endIndex.toString();
-    totalItemsSpan.textContent = totalItems.toString();
+      // Buscamos en todos los campos
+      const matches = 
+        fullName.includes(searchTerm) || 
+        email.includes(searchTerm) || 
+        orgUnit.includes(searchTerm);
 
-    // Mostrar solo las filas de la página actual
-    allRows.forEach(row => row.style.display = 'none');
-    filteredRows.slice(startIndex, endIndex).forEach((row, idx) => {
-      row.style.display = '';
-      // Actualizar el número de la fila
-      const numberCell = row.querySelector('td:first-child');
-      if (numberCell) {
-        numberCell.textContent = (startIndex + idx + 1).toString();
-      }
-    });
-  }
-
-  function filterTable() {
-    const searchTerm = searchInput.value.toLowerCase();
-    
-    filteredRows = allRows.filter(row => {
-      const name = row.children[0].textContent?.toLowerCase() || '';
-      const email = row.children[1].textContent?.toLowerCase() || '';
-      return name.includes(searchTerm) || email.includes(searchTerm);
+      row.style.display = matches ? '' : 'none';
     });
 
-    currentPage = 1;
-    updatePagination();
-  }
-
-  // Función para mostrar feedback visual en la fila
-  function showRowFeedback(row: HTMLTableRowElement) {
-    const originalBackground = row.style.backgroundColor;
-    row.style.backgroundColor = 'rgb(134 239 172)'; // verde claro
-    setTimeout(() => {
-      row.style.backgroundColor = originalBackground;
-    }, 200);
-  }
-
-  // Event listeners
-  searchInput?.addEventListener('input', filterTable);
-  
-  pageSizeSelect?.addEventListener('change', () => {
-    pageSize = parseInt(pageSizeSelect.value);
-    currentPage = 1;
-    updatePagination();
-  });
-
-  prevPageBtn?.addEventListener('click', () => {
-    if (currentPage > 1) {
-      currentPage--;
-      updatePagination();
-    }
-  });
-
-  nextPageBtn?.addEventListener('click', () => {
-    const totalPages = Math.ceil(filteredRows.length / pageSize);
-    if (currentPage < totalPages) {
-      currentPage++;
-      updatePagination();
-    }
-  });
-
-  document.querySelectorAll('tbody tr').forEach(row => {
-    row.addEventListener('click', async (e) => {
-      // No ejecutar si se hizo clic en el botón
-      if (!(e.target as HTMLElement).closest('.copy-button')) {
-        const email = row.getAttribute('data-email') || '';
-        try {
-          await navigator.clipboard.writeText(email);
-          showRowFeedback(row);
-          
-          // Encontrar y actualizar el botón correspondiente
-          const button = row.querySelector('.copy-button') as HTMLButtonElement;
-          if (button) {
-            const originalText = button.textContent;
-            button.textContent = '¡COPIADO!';
-            button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-            button.classList.add('bg-green-500', 'hover:bg-green-600');
-            
-            setTimeout(() => {
-              button.textContent = originalText;
-              button.classList.remove('bg-green-500', 'hover:bg-green-600');
-              button.classList.add('bg-blue-500', 'hover:bg-blue-600');
-            }, 2000);
-          }
-        } catch (err) {
-          console.error('Error al copiar:', err);
-        }
-      }
-    });
-  });
-
-  // Inicialización
-  filteredRows = allRows;
-  updatePagination();
-
-  // Importar canvas-confetti
-  import confetti from 'canvas-confetti';
-
-  // Función para lanzar confetti
-  function launchConfetti() {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
-  }
-
-  // Event listener para el área de créditos
-  const creditsArea = document.getElementById('credits');
-  const authorLink = document.getElementById('author-link');
-
-  creditsArea?.addEventListener('click', (e) => {
-    // No lanzar confetti si se hizo clic en el enlace del autor
-    if (!(e.target as HTMLElement).closest('#author-link')) {
-      launchConfetti();
+    // Actualizamos el contador de resultados si existe
+    const totalResults = document.getElementById('totalResults');
+    if (totalResults) {
+      const visibleRows = document.querySelectorAll('tbody tr:not([style*="display: none"])').length;
+      totalResults.textContent = `${visibleRows} resultado${visibleRows !== 1 ? 's' : ''}`;
     }
   });
 </script>

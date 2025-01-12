@@ -3,16 +3,12 @@ import Layout from '../layouts/Layout.astro';
 import UsersTable from '../components/UsersTable.astro';
 import { getUsers, getOrganizationalUnits, getAuthUrl } from '../utils/googleAdmin';
 
-// Asegura que la página se renderiza en el servidor
 export const prerender = false;
 
 const accessToken = Astro.cookies.get('access_token')?.value;
-
-let users = [];
-let orgUnits = [];
-let apiError = null;
-const authError = Astro.url.searchParams.get('error');
-const authSuccess = Astro.url.searchParams.get('auth') === 'success';
+let users: any[] = [];
+let orgUnits: any[] = [];
+let error = null;
 
 if (!accessToken) {
   const authUrl = await getAuthUrl();
@@ -20,48 +16,75 @@ if (!accessToken) {
 }
 
 try {
-  users = await getUsers(accessToken);
-  orgUnits = await getOrganizationalUnits(accessToken);
-} catch (e) {
+  [users, orgUnits] = await Promise.all([
+    getUsers(accessToken),
+    getOrganizationalUnits(accessToken)
+  ]);
+} catch (e: any) {
   if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
     Astro.cookies.delete('access_token');
     const authUrl = await getAuthUrl();
     return Astro.redirect(authUrl);
   }
-  apiError = e.message;
+  error = e.message;
 }
 ---
 
-<Layout title="Directorio de Contactos">
-  <main class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-center mb-8 dark:text-white">
-      Directorio de Contactos JCI Ecuador
-    </h1>
-    
-    {authError && (
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-        <strong class="font-bold">Error: </strong>
-        <span class="block sm:inline">
-          {authError === 'auth' && 'Error en la autenticación'}
-          {authError === 'token' && 'Error obteniendo el token de acceso'}
-          {authError === 'unknown' && 'Error desconocido'}
-        </span>
+<Layout title="Directorio JCI Ecuador">
+  <main class="min-h-screen bg-transparent">
+    {/* Header con logos */}
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex justify-between items-center mb-8">
+        <img 
+          src="/logo-color-jci.png" 
+          alt="JCI Ecuador Logo" 
+          class="h-24 dark:hidden"
+        />
+        <img 
+          src="/logo-blanco-jci.png" 
+          alt="JCI Ecuador Logo" 
+          class="h-24 hidden dark:block"
+        />
+        <img 
+          src="/somos-li-color.png" 
+          alt="Somos LI" 
+          class="h-20 dark:hidden"
+        />
+        <img 
+          src="/somos-li-blanco.png" 
+          alt="Somos LI" 
+          class="h-20 hidden dark:block"
+        />
       </div>
-    )}
-    
-    {authSuccess && (
-      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
-        <span class="block sm:inline">Autenticación exitosa</span>
-      </div>
-    )}
-    
-    {apiError ? (
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong class="font-bold">Error:</strong>
-        <span class="block sm:inline">{apiError}</span>
-      </div>
-    ) : (
-      <UsersTable users={users} orgUnits={orgUnits} />
-    )}
+
+      <h1 class="text-3xl font-bold text-center mb-8 dark:text-white">
+        Directorio Nacional JCI Ecuador
+      </h1>
+
+      {error ? (
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+          <strong class="font-bold">Error:</strong>
+          <span class="block sm:inline">{error}</span>
+        </div>
+      ) : (
+        <UsersTable users={users} orgUnits={orgUnits} />
+      )}
+    </div>
+
+    {/* Diseño horizontal antes del footer */}
+    <div class="w-full mt-12">
+      <img 
+        src="/diseno-horizontal.png" 
+        alt="Diseño JCI Ecuador" 
+        class="w-full object-cover h-24"
+      />
+    </div>
   </main>
-</Layout> 
+</Layout>
+
+<style>
+  /* Removemos estos estilos ya que ahora están en Layout.astro */
+  :global(.dark) main {
+    background: transparent;
+  }
+</style> 
