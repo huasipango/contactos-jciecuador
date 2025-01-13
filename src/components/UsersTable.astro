@@ -276,6 +276,32 @@ const socialNetworks = [
     }
   });
 
+  // Agregar event listeners para los botones de copiar
+  document.querySelectorAll('.copy-button').forEach(button => {
+    button.addEventListener('click', async (e) => {
+      e.stopPropagation(); // Prevenir que se propague al tr
+      const email = (button as HTMLElement).getAttribute('data-email') || '';
+      
+      try {
+        await navigator.clipboard.writeText(email);
+        const btn = button as HTMLButtonElement;
+        const originalText = btn.textContent;
+        btn.textContent = '¡COPIADO!';
+        btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+        btn.classList.add('bg-green-500', 'hover:bg-green-600');
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+          btn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+        }, 2000);
+      } catch (err) {
+        console.error('Error al copiar:', err);
+      }
+    });
+  });
+
+  // Actualizar el event listener de las filas
   document.querySelectorAll('tbody tr').forEach(row => {
     row.addEventListener('click', async (e) => {
       // No ejecutar si se hizo clic en el botón
