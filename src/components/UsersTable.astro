@@ -190,7 +190,7 @@ const socialNetworks = [
 
 <script>
   const searchInput = document.getElementById('searchInput') as HTMLInputElement;
-  const pageSizeSelect = document.getElementById('pageSize') as HTMLSelectElement;
+  const itemsPerPageSelect = document.getElementById('itemsPerPage') as HTMLSelectElement;
   const tableBody = document.getElementById('tableBody') as HTMLTableSectionElement;
   const prevPageBtn = document.getElementById('prevPage') as HTMLButtonElement;
   const nextPageBtn = document.getElementById('nextPage') as HTMLButtonElement;
@@ -255,8 +255,8 @@ const socialNetworks = [
   // Event listeners
   searchInput?.addEventListener('input', filterTable);
   
-  pageSizeSelect?.addEventListener('change', () => {
-    pageSize = parseInt(pageSizeSelect.value);
+  itemsPerPageSelect?.addEventListener('change', () => {
+    pageSize = parseInt(itemsPerPageSelect.value);
     currentPage = 1;
     updatePagination();
   });
