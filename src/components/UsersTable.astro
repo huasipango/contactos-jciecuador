@@ -53,23 +53,24 @@ const socialNetworks = [
     </p>
   </div>
 
-  <div class="flex gap-4 items-center">
+  <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
     <input
       type="text"
       id="searchInput"
       placeholder="Buscar por nombre o correo..."
-      class="w-full px-4 py-2 rounded-lg border dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      class="w-full md:w-2/3 px-4 py-2 rounded-lg border dark:border-gray-700 dark:bg-gray-800 dark:text-white"
     />
-    <div class="flex items-center gap-2">
-      <label class="text-sm text-gray-600 dark:text-gray-400">Mostrar:</label>
-      <select
-        id="pageSize"
-        class="px-3 py-2 rounded-lg border dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+    <div class="flex items-center space-x-2 w-full md:w-auto">
+      <label class="text-sm text-gray-600 dark:text-gray-400">Mostrar</label>
+      <select 
+        id="itemsPerPage" 
+        class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
       >
-        <option value="25">25</option>
+        <option value="25" selected>25</option>
         <option value="50">50</option>
         <option value="100">100</option>
       </select>
+      <span class="text-sm text-gray-600 dark:text-gray-400">registros</span>
     </div>
   </div>
 
@@ -193,33 +194,130 @@ const socialNetworks = [
 </div>
 
 <script>
+  let ITEMS_PER_PAGE = 25;
+  let currentPage = 1;
+
   const searchInput = document.getElementById('searchInput');
-  const tableRows = document.querySelectorAll('tbody tr');
+  const itemsPerPageSelect = document.getElementById('itemsPerPage');
+  const tableBody = document.getElementById('tableBody');
+  const prevButton = document.getElementById('prevPage');
+  const nextButton = document.getElementById('nextPage');
+  const startIndexSpan = document.getElementById('startIndex');
+  const endIndexSpan = document.getElementById('endIndex');
+  const totalItemsSpan = document.getElementById('totalItems');
+
+  function setupCopyButtons() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      row.addEventListener('click', () => {
+        const email = row.getAttribute('data-email');
+        if (email) {
+          navigator.clipboard.writeText(email).then(() => {
+            const button = row.querySelector('.copy-button');
+            if (button) {
+              const originalText = button.textContent;
+              button.textContent = '¡Copiado!';
+              button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+              button.classList.add('bg-green-500', 'hover:bg-green-600');
+              
+              setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+              }, 2000);
+            }
+          });
+        }
+      });
+    });
+  }
+
+  function updatePagination() {
+    const allRows = Array.from(document.querySelectorAll('tbody tr'));
+    const visibleRows = allRows.filter(row => !row.hasAttribute('style') || row.style.display !== 'none');
+    
+    const totalItems = visibleRows.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+
+    // Ocultar todas las filas primero
+    allRows.forEach(row => row.style.display = 'none');
+
+    // Mostrar solo las filas de la página actual
+    visibleRows.slice(startIndex, endIndex).forEach(row => {
+      row.style.display = '';
+    });
+
+    // Actualizar botones
+    if (prevButton) {
+      prevButton.disabled = currentPage === 1;
+    }
+    if (nextButton) {
+      nextButton.disabled = currentPage >= totalPages;
+    }
+
+    // Actualizar contador
+    if (startIndexSpan) {
+      startIndexSpan.textContent = totalItems ? (startIndex + 1).toString() : '0';
+    }
+    if (endIndexSpan) {
+      endIndexSpan.textContent = endIndex.toString();
+    }
+    if (totalItemsSpan) {
+      totalItemsSpan.textContent = totalItems.toString();
+    }
+  }
+
+  // Event Listeners
+  itemsPerPageSelect?.addEventListener('change', (e) => {
+    const newValue = parseInt((e.target as HTMLSelectElement).value);
+    if (newValue) {
+      ITEMS_PER_PAGE = newValue;
+      currentPage = 1;
+      updatePagination();
+    }
+  });
 
   searchInput?.addEventListener('input', (e) => {
     const searchTerm = (e.target as HTMLInputElement).value.toLowerCase().trim();
+    const rows = document.querySelectorAll('tbody tr');
 
-    tableRows.forEach((row) => {
-      // Obtenemos los valores directamente de los atributos data-*
+    rows.forEach((row) => {
       const fullName = row.querySelector('[data-fullname]')?.getAttribute('data-fullname')?.toLowerCase() || '';
       const email = row.querySelector('[data-email]')?.getAttribute('data-email')?.toLowerCase() || '';
-      const orgUnit = row.querySelector('[data-orgunit]')?.getAttribute('data-orgunit')?.toLowerCase() || '';
-
-      // Buscamos en todos los campos
-      const matches = 
-        fullName.includes(searchTerm) || 
-        email.includes(searchTerm) || 
-        orgUnit.includes(searchTerm);
-
+      const matches = fullName.includes(searchTerm) || email.includes(searchTerm);
+      
       row.style.display = matches ? '' : 'none';
     });
 
-    // Actualizamos el contador de resultados si existe
-    const totalResults = document.getElementById('totalResults');
-    if (totalResults) {
-      const visibleRows = document.querySelectorAll('tbody tr:not([style*="display: none"])').length;
-      totalResults.textContent = `${visibleRows} resultado${visibleRows !== 1 ? 's' : ''}`;
+    currentPage = 1;
+    updatePagination();
+  });
+
+  prevButton?.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
     }
+  });
+
+  nextButton?.addEventListener('click', () => {
+    const visibleRows = Array.from(document.querySelectorAll('tbody tr')).filter(
+      row => !row.hasAttribute('style') || row.style.display !== 'none'
+    );
+    const totalPages = Math.ceil(visibleRows.length / ITEMS_PER_PAGE);
+    
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+    }
+  });
+
+  // Inicializar
+  document.addEventListener('DOMContentLoaded', () => {
+    setupCopyButtons();
+    updatePagination();
   });
 </script>
 
