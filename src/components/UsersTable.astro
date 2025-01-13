@@ -107,16 +107,10 @@ const socialNetworks = [
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 {index + 1}
               </td>
-              <td 
-                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
-                data-fullname={user.fullName}
-              >
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                 {user.fullName}
               </td>
-              <td 
-                class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
-                data-email={user.email}
-              >
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 {user.email}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
@@ -195,130 +189,148 @@ const socialNetworks = [
 </div>
 
 <script>
-  let ITEMS_PER_PAGE = 25;
+  const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+  const pageSizeSelect = document.getElementById('pageSize') as HTMLSelectElement;
+  const tableBody = document.getElementById('tableBody') as HTMLTableSectionElement;
+  const prevPageBtn = document.getElementById('prevPage') as HTMLButtonElement;
+  const nextPageBtn = document.getElementById('nextPage') as HTMLButtonElement;
+  const startIndexSpan = document.getElementById('startIndex') as HTMLSpanElement;
+  const endIndexSpan = document.getElementById('endIndex') as HTMLSpanElement;
+  const totalItemsSpan = document.getElementById('totalItems') as HTMLSpanElement;
+  
   let currentPage = 1;
-
-  const searchInput = document.getElementById('searchInput');
-  const itemsPerPageSelect = document.getElementById('itemsPerPage');
-  const tableBody = document.getElementById('tableBody');
-  const prevButton = document.getElementById('prevPage');
-  const nextButton = document.getElementById('nextPage');
-  const startIndexSpan = document.getElementById('startIndex');
-  const endIndexSpan = document.getElementById('endIndex');
-  const totalItemsSpan = document.getElementById('totalItems');
-
-  function setupCopyButtons() {
-    const rows = document.querySelectorAll('tbody tr');
-    rows.forEach(row => {
-      row.addEventListener('click', () => {
-        const email = row.getAttribute('data-email');
-        if (email) {
-          navigator.clipboard.writeText(email).then(() => {
-            const button = row.querySelector('.copy-button');
-            if (button) {
-              const originalText = button.textContent;
-              button.textContent = '¡Copiado!';
-              button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-              button.classList.add('bg-green-500', 'hover:bg-green-600');
-              
-              setTimeout(() => {
-                button.textContent = originalText;
-                button.classList.remove('bg-green-500', 'hover:bg-green-600');
-                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
-              }, 2000);
-            }
-          });
-        }
-      });
-    });
-  }
+  let pageSize = 25;
+  let filteredRows: HTMLTableRowElement[] = [];
+  const allRows = Array.from(tableBody.querySelectorAll('tr'));
 
   function updatePagination() {
-    const allRows = Array.from(document.querySelectorAll('tbody tr'));
-    const visibleRows = allRows.filter(row => !row.hasAttribute('style') || row.style.display !== 'none');
-    
-    const totalItems = visibleRows.length;
-    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+    const totalItems = filteredRows.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
 
-    // Ocultar todas las filas primero
-    allRows.forEach(row => row.style.display = 'none');
+    // Actualizar navegación
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage === totalPages;
+
+    // Actualizar información de registros
+    startIndexSpan.textContent = totalItems === 0 ? '0' : (startIndex + 1).toString();
+    endIndexSpan.textContent = endIndex.toString();
+    totalItemsSpan.textContent = totalItems.toString();
 
     // Mostrar solo las filas de la página actual
-    visibleRows.slice(startIndex, endIndex).forEach(row => {
+    allRows.forEach(row => row.style.display = 'none');
+    filteredRows.slice(startIndex, endIndex).forEach((row, idx) => {
       row.style.display = '';
+      // Actualizar el número de la fila
+      const numberCell = row.querySelector('td:first-child');
+      if (numberCell) {
+        numberCell.textContent = (startIndex + idx + 1).toString();
+      }
     });
-
-    // Actualizar botones
-    if (prevButton) {
-      prevButton.disabled = currentPage === 1;
-    }
-    if (nextButton) {
-      nextButton.disabled = currentPage >= totalPages;
-    }
-
-    // Actualizar contador
-    if (startIndexSpan) {
-      startIndexSpan.textContent = totalItems ? (startIndex + 1).toString() : '0';
-    }
-    if (endIndexSpan) {
-      endIndexSpan.textContent = endIndex.toString();
-    }
-    if (totalItemsSpan) {
-      totalItemsSpan.textContent = totalItems.toString();
-    }
   }
 
-  // Event Listeners
-  itemsPerPageSelect?.addEventListener('change', (e) => {
-    const newValue = parseInt((e.target as HTMLSelectElement).value);
-    if (newValue) {
-      ITEMS_PER_PAGE = newValue;
-      currentPage = 1;
-      updatePagination();
-    }
-  });
-
-  searchInput?.addEventListener('input', (e) => {
-    const searchTerm = (e.target as HTMLInputElement).value.toLowerCase().trim();
-    const rows = document.querySelectorAll('tbody tr');
-
-    rows.forEach((row) => {
-      const fullName = row.querySelector('[data-fullname]')?.getAttribute('data-fullname')?.toLowerCase() || '';
-      const email = row.querySelector('[data-email]')?.getAttribute('data-email')?.toLowerCase() || '';
-      const matches = fullName.includes(searchTerm) || email.includes(searchTerm);
-      
-      row.style.display = matches ? '' : 'none';
+  function filterTable() {
+    const searchTerm = searchInput.value.toLowerCase();
+    
+    filteredRows = allRows.filter(row => {
+      const name = row.children[0].textContent?.toLowerCase() || '';
+      const email = row.children[1].textContent?.toLowerCase() || '';
+      return name.includes(searchTerm) || email.includes(searchTerm);
     });
 
     currentPage = 1;
     updatePagination();
+  }
+
+  // Función para mostrar feedback visual en la fila
+  function showRowFeedback(row: HTMLTableRowElement) {
+    const originalBackground = row.style.backgroundColor;
+    row.style.backgroundColor = 'rgb(134 239 172)'; // verde claro
+    setTimeout(() => {
+      row.style.backgroundColor = originalBackground;
+    }, 200);
+  }
+
+  // Event listeners
+  searchInput?.addEventListener('input', filterTable);
+  
+  pageSizeSelect?.addEventListener('change', () => {
+    pageSize = parseInt(pageSizeSelect.value);
+    currentPage = 1;
+    updatePagination();
   });
 
-  prevButton?.addEventListener('click', () => {
+  prevPageBtn?.addEventListener('click', () => {
     if (currentPage > 1) {
       currentPage--;
       updatePagination();
     }
   });
 
-  nextButton?.addEventListener('click', () => {
-    const visibleRows = Array.from(document.querySelectorAll('tbody tr')).filter(
-      row => !row.hasAttribute('style') || row.style.display !== 'none'
-    );
-    const totalPages = Math.ceil(visibleRows.length / ITEMS_PER_PAGE);
-    
+  nextPageBtn?.addEventListener('click', () => {
+    const totalPages = Math.ceil(filteredRows.length / pageSize);
     if (currentPage < totalPages) {
       currentPage++;
       updatePagination();
     }
   });
 
-  // Inicializar
-  document.addEventListener('DOMContentLoaded', () => {
-    setupCopyButtons();
-    updatePagination();
+  document.querySelectorAll('tbody tr').forEach(row => {
+    row.addEventListener('click', async (e) => {
+      // No ejecutar si se hizo clic en el botón
+      if (!(e.target as HTMLElement).closest('.copy-button')) {
+        const email = row.getAttribute('data-email') || '';
+        try {
+          await navigator.clipboard.writeText(email);
+          showRowFeedback(row);
+          
+          // Encontrar y actualizar el botón correspondiente
+          const button = row.querySelector('.copy-button') as HTMLButtonElement;
+          if (button) {
+            const originalText = button.textContent;
+            button.textContent = '¡COPIADO!';
+            button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            button.classList.add('bg-green-500', 'hover:bg-green-600');
+            
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.classList.remove('bg-green-500', 'hover:bg-green-600');
+              button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }, 2000);
+          }
+        } catch (err) {
+          console.error('Error al copiar:', err);
+        }
+      }
+    });
+  });
+
+  // Inicialización
+  filteredRows = allRows;
+  updatePagination();
+
+  // Importar canvas-confetti
+  import confetti from 'canvas-confetti';
+
+  // Función para lanzar confetti
+  function launchConfetti() {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  }
+
+  // Event listener para el área de créditos
+  const creditsArea = document.getElementById('credits');
+  const authorLink = document.getElementById('author-link');
+
+  creditsArea?.addEventListener('click', (e) => {
+    // No lanzar confetti si se hizo clic en el enlace del autor
+    if (!(e.target as HTMLElement).closest('#author-link')) {
+      launchConfetti();
+    }
   });
 </script>
 
