@@ -67,9 +67,50 @@ try {
         />
       </div>
 
-      <h1 class="text-3xl font-bold text-center mb-8 dark:text-white">
+      <h1 class="text-3xl font-bold text-center mb-4 dark:text-white">
         Directorio Nacional JCI Ecuador
       </h1>
+
+      <div class="grid md:grid-cols-2 gap-4 mb-8 max-w-6xl mx-auto">
+        {/* Primera caja - Información de búsqueda */}
+        <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+          <p class="text-blue-800 dark:text-blue-100 text-sm">
+            Esta aplicación muestra el directorio de contactos de los miembros de JCI Ecuador. 
+            Para copiar una dirección de correo electrónico, puede:
+            <ul class="list-disc ml-6 mt-2 text-blue-800 dark:text-blue-100">
+              <li>Hacer clic en cualquier parte de la fila del usuario</li>
+              <li>O usar el botón "COPIAR CORREO" al final de cada fila</li>
+            </ul>
+            <span class="text-blue-800 dark:text-blue-100">
+              Use el buscador para filtrar por nombre o correo electrónico.
+            </span>
+          </p>
+        </div>
+
+        {/* Segunda caja - Solicitud de correo */}
+        <div class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
+          <div class="flex flex-col h-full justify-between">
+            <div>
+              <p class="text-yellow-800 dark:text-yellow-100 mb-2">
+                <span class="font-bold">¿Quieres solicitar agregar o eliminar un correo?</span>
+              </p>
+              <p class="text-yellow-700 dark:text-yellow-200 text-sm">
+                Los Presidentes Locales pueden solicitar cambios en las direcciones de correo electrónico utilizando exclusivamente el correo oficial de su Organización Local (ejemplo: ambato@jciecuador.com).
+              </p>
+            </div>
+            <div class="mt-4 text-right">
+              <a 
+                href="https://forms.gle/y7x3CKXZsqaE2Pgp9"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md transition-colors"
+              >
+                Solicitar correo
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {error ? (
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
