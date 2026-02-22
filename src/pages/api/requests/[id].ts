@@ -11,7 +11,7 @@ export const GET: APIRoute = async (context) => {
   const request = await getRequestById(context.params.id || '');
   if (!request) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });
 
-  if (user.role === 'requestor' && request.requestorEmail !== user.email) {
+  if ((user.role === 'presidente_local' || user.role === 'miembro') && request.requestorEmail !== user.email) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
   return new Response(JSON.stringify({ request }), {
@@ -48,7 +48,7 @@ export const PATCH: APIRoute = async (context) => {
   }
 
   if (body.action === 'approve') {
-    if (!requireRole(user.role, ['approver'])) {
+    if (!requireRole(user.role, ['funcionario_nacional'])) {
       return new Response(JSON.stringify({ error: 'No autorizado para aprobar' }), { status: 403 });
     }
     const updated = await approveRequest(id, user.email);
@@ -61,7 +61,7 @@ export const PATCH: APIRoute = async (context) => {
   }
 
   if (body.action === 'reject') {
-    if (!requireRole(user.role, ['approver'])) {
+    if (!requireRole(user.role, ['funcionario_nacional'])) {
       return new Response(JSON.stringify({ error: 'No autorizado para rechazar' }), { status: 403 });
     }
     const updated = await rejectRequest(id, user.email, body.reason || 'Sin detalle');

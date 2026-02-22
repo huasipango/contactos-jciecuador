@@ -5,6 +5,7 @@ import Card from '../components/ui/Card.astro';
 import Button from '../components/ui/Button.astro';
 import Alert from '../components/ui/Alert.astro';
 import { getUsers, getOrganizationalUnits, getAuthUrl, generateOauthState } from '../utils/googleAdmin';
+import { getSessionUser } from '../utils/auth';
 
 export const prerender = false;
 
@@ -32,6 +33,8 @@ if (!accessToken) {
   return Astro.redirect(authUrl);
 }
 
+const user = await getSessionUser(Astro);
+
 try {
   [users, orgUnits] = await Promise.all([
     getUsers(accessToken),
@@ -56,13 +59,13 @@ try {
 
 kpis = {
   totalUsers: users.length,
-  suspendedUsers: users.filter((user) => user.suspended).length,
-  inactive90dUsers: users.filter((user) => user.isInactive90d).length,
-  withoutLastLogin: users.filter((user) => !user.lastLoginTime).length
+  suspendedUsers: users.filter((u) => u.suspended).length,
+  inactive90dUsers: users.filter((u) => u.isInactive90d).length,
+  withoutLastLogin: users.filter((u) => !u.lastLoginTime).length
 };
 ---
 
-<Layout title="Directorio JCI Ecuador">
+<Layout title="Directorio JCI Ecuador" user={user}>
   <main class="min-h-screen bg-transparent">
     <div class="container mx-auto px-4 py-8">
       <h1 class="text-3xl font-bold text-center mb-4 text-foreground">

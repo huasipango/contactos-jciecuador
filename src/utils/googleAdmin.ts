@@ -4,6 +4,7 @@ import type { User as DirectoryUser } from '../types';
 const USER_READ_SCOPE = 'https://www.googleapis.com/auth/admin.directory.user.readonly';
 const USER_WRITE_SCOPE = 'https://www.googleapis.com/auth/admin.directory.user';
 const OU_READ_SCOPE = 'https://www.googleapis.com/auth/admin.directory.orgunit.readonly';
+const GROUP_MEMBER_READ_SCOPE = 'https://www.googleapis.com/auth/admin.directory.group.member.readonly';
 const USER_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email';
 const OPENID_SCOPE = 'openid';
 
@@ -54,7 +55,7 @@ function getServiceAccountClient(scopes: string[]) {
 }
 
 function getDirectoryScopes() {
-  return [USER_READ_SCOPE, USER_WRITE_SCOPE, OU_READ_SCOPE];
+  return [USER_READ_SCOPE, USER_WRITE_SCOPE, OU_READ_SCOPE, GROUP_MEMBER_READ_SCOPE];
 }
 
 async function getDirectoryAuthClient(_userAccessToken?: string) {
@@ -353,4 +354,55 @@ export async function deleteWorkspaceUser(accessToken: string, email: string) {
   const authClient = await getDirectoryAuthClient(accessToken);
   const admin = google.admin({ version: 'directory_v1', auth: authClient });
   await admin.users.delete({ userKey: email });
+}
+
+export async function isWorkspaceAdmin(email: string): Promise<boolean> {
+  const authClient = await getDirectoryAuthClient();
+  const admin = google.admin({ version: 'directory_v1', auth: authClient });
+  try {
+    const response = await admin.users.get({
+      userKey: email,
+      fields: 'isAdmin',
+    });
+    return response.data.isAdmin === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function checkGroupMembership(email: string, groupEmail: string): Promise<boolean> {
+  const authClient = await getDirectoryAuthClient();
+  const admin = google.admin({ version: 'directory_v1', auth: authClient });
+  try {
+    const response = await admin.members.hasMember({
+      groupKey: groupEmail,
+      memberKey: email,
+    });
+    return response.data.isMember === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getUserProfile(email: string): Promise<{ displayName: string; photoUrl: string | null }> {
+  const authClient = await getDirectoryAuthClient();
+  const admin = google.admin({ version: 'directory_v1', auth: authClient });
+  try {
+    const response = await admin.users.get({
+      userKey: email,
+      projection: 'basic',
+      fields: 'name/fullName,name/givenName,name/familyName,thumbnailPhotoUrl',
+    });
+    const fullName = response.data.name?.fullName
+      || `${response.data.name?.givenName || ''} ${response.data.name?.familyName || ''}`.trim();
+    return {
+      displayName: fullName || email.split('@')[0],
+      photoUrl: response.data.thumbnailPhotoUrl || null,
+    };
+  } catch {
+    return {
+      displayName: email.split('@')[0],
+      photoUrl: null,
+    };
+  }
 }

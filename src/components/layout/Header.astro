@@ -1,14 +1,35 @@
 ---
+import UserBadge from './UserBadge.astro';
+import type { SessionUser } from '../../types';
+
 interface Props {
   currentPath: string;
+  user?: SessionUser | null;
 }
 
-const { currentPath } = Astro.props;
+const { currentPath, user } = Astro.props;
 
-const navItems = [
+type NavItem = { label: string; href: string; minRole?: string };
+
+const allNavItems: NavItem[] = [
   { label: 'Directorio', href: '/' },
-  { label: 'Solicitudes', href: '/requests' },
+  { label: 'Solicitudes', href: '/requests', minRole: 'presidente_local' },
 ];
+
+const VISIBLE_RANK: Record<string, number> = {
+  miembro: 0,
+  presidente_local: 1,
+  funcionario_nacional: 2,
+  administrador: 3,
+};
+
+const userRank = user ? (VISIBLE_RANK[user.role] ?? 0) : -1;
+
+const navItems = allNavItems.filter((item) => {
+  if (!item.minRole) return true;
+  if (!user) return false;
+  return userRank >= (VISIBLE_RANK[item.minRole] ?? 0);
+});
 
 function isActive(href: string, current: string): boolean {
   if (href === '/') return current === '/';
@@ -51,6 +72,15 @@ function isActive(href: string, current: string): boolean {
     </div>
 
     <div class="flex items-center gap-2">
+      {user && (
+        <UserBadge
+          displayName={user.displayName}
+          email={user.email}
+          roleLabel={user.roleLabel}
+          photoUrl={user.photoUrl}
+        />
+      )}
+
       <button
         id="theme-toggle"
         class="inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -104,6 +134,38 @@ function isActive(href: string, current: string): boolean {
           {item.label}
         </a>
       ))}
+
+      {user && (
+        <div class="border-t border-border pt-2 mt-2">
+          <div class="flex items-center gap-3 px-4 py-2">
+            {user.photoUrl ? (
+              <img
+                src={user.photoUrl}
+                alt={user.displayName}
+                class="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
+                referrerpolicy="no-referrer"
+              />
+            ) : (
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                {user.displayName.split(' ').slice(0, 2).map((w: string) => w.charAt(0).toUpperCase()).join('')}
+              </span>
+            )}
+            <div>
+              <p class="text-sm font-medium text-foreground">{user.displayName}</p>
+              <p class="text-[11px] text-muted-foreground">{user.roleLabel}</p>
+            </div>
+          </div>
+          <a
+            href="/auth/logout"
+            class="flex items-center gap-2 h-10 px-4 rounded-md text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Cerrar sesión
+          </a>
+        </div>
+      )}
     </div>
   </nav>
 </header>

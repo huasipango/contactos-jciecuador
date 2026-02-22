@@ -13,7 +13,7 @@ export const GET: APIRoute = async (context) => {
   }
 
   const requests = await listRequests();
-  const visible = user.role === 'requestor'
+  const visible = (user.role === 'presidente_local' || user.role === 'miembro')
     ? requests.filter((item) => item.requestorEmail === user.email)
     : requests;
 

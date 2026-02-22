@@ -28,7 +28,7 @@ if (!request) {
 }
 ---
 
-<Layout title={`Solicitud ${request.id}`}>
+<Layout title={`Solicitud ${request.id}`} user={user}>
   <main class="container mx-auto px-4 py-8">
     <a href="/requests" class="text-primary hover:underline">← Volver</a>
     <Card class="mt-4 p-4">

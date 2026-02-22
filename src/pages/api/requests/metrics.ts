@@ -5,7 +5,7 @@ import { computeRequestMetrics } from '../../../utils/requestWorkflow';
 export const GET: APIRoute = async (context) => {
   const user = await getSessionUser(context);
   if (!user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-  if (!requireRole(user.role, ['approver'])) {
+  if (!requireRole(user.role, ['funcionario_nacional'])) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
 

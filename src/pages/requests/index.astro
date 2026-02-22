@@ -23,12 +23,12 @@ if (!user) {
 }
 ---
 
-<Layout title="Gestión de correos">
+<Layout title="Gestión de correos" user={user}>
   <main class="container mx-auto px-4 py-8 space-y-4">
     <Alert variant="info">
       <h1 class="text-2xl font-bold text-foreground">Gestión de cuentas de correo</h1>
       <p class="text-sm text-foreground mt-1">
-        Rol actual: <span class="font-semibold">{user.role}</span> ({user.email})
+        Rol actual: <span class="font-semibold">{user.roleLabel}</span> ({user.email})
       </p>
       <p class="text-sm text-foreground mt-1">
         Flujo semi-automático activo: teléfono y recuperación de contraseña en automático; altas y bajas con aprobación.

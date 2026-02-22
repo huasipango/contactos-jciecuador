@@ -18,7 +18,38 @@ export interface User {
 export interface OrganizationalUnit {
   name: string;
   path: string;
-} 
+}
+
+export type UserRole = 'miembro' | 'presidente_local' | 'funcionario_nacional' | 'administrador';
+
+export interface SessionUser {
+  email: string;
+  role: UserRole;
+  roleLabel: string;
+  displayName: string;
+  photoUrl: string | null;
+  accessToken: string;
+}
+
+export const ROLE_LABELS: Record<string, string> = {
+  administrador: 'Administrador',
+  funcionario_nacional: 'Funcionario Nacional',
+  presidente_local: 'Presidente Local',
+  miembro: 'Miembro',
+  executor: 'Ejecutor',
+  approver: 'Aprobador',
+  requestor: 'Solicitante',
+};
+
+export const ROLE_RANK: Record<string, number> = {
+  miembro: 0,
+  presidente_local: 1,
+  funcionario_nacional: 2,
+  administrador: 3,
+  requestor: 1,
+  approver: 2,
+  executor: 3,
+};
 
 export type RequestType = 'create_account' | 'update_phone' | 'reset_password' | 'delete_account';
 export type RequestStatus =
@@ -46,7 +77,7 @@ export interface WorkspaceRequest {
   status: RequestStatus;
   organizationalUnit: string;
   requestorEmail: string;
-  requestorRole: 'requestor' | 'approver' | 'executor';
+  requestorRole: string;
   approvedBy?: string;
   rejectedBy?: string;
   executorEmail?: string;
