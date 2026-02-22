@@ -1,0 +1,30 @@
+---
+interface Props {
+  variant?: 'info' | 'success' | 'warning' | 'error';
+  class?: string;
+}
+
+const { variant = 'info', class: className } = Astro.props;
+
+const base = 'rounded-lg border p-4';
+
+const variants: Record<string, string> = {
+  info:    'border-primary/30 bg-primary/5',
+  success: 'border-accent/30 bg-accent/5',
+  warning: 'border-warning/30 bg-warning/5',
+  error:   'border-destructive/30 bg-destructive/5',
+};
+
+const titleColors: Record<string, string> = {
+  info:    'text-primary',
+  success: 'text-accent',
+  warning: 'text-warning',
+  error:   'text-destructive',
+};
+
+const classes = [base, variants[variant], className].filter(Boolean).join(' ');
+---
+
+<div class={classes} data-variant={variant}>
+  <slot />
+</div>

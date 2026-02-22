@@ -1,28 +1,28 @@
-<div class="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-700 p-4">
+<div class="bg-card text-card-foreground rounded-lg border border-border p-4">
   <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-    <h2 class="text-lg font-semibold dark:text-white">Bandeja de solicitudes</h2>
+    <h2 class="text-lg font-semibold text-foreground">Bandeja de solicitudes</h2>
     <div class="flex gap-2">
-      <button id="refreshRequests" class="px-3 py-2 text-sm rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">Actualizar</button>
-      <button id="executeBatch" class="px-3 py-2 text-sm rounded-md bg-green-600 hover:bg-green-700 text-white">Procesar lote</button>
-      <input id="rollbackBatchId" class="px-2 py-2 text-sm rounded-md border dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="batch-..." />
-      <button id="rollbackBatch" class="px-3 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white">Rollback lote</button>
-      <button id="downloadCsv" class="px-3 py-2 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white">Exportar CSV</button>
+      <button id="refreshRequests" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md border border-input bg-background text-foreground font-medium hover:bg-muted transition-colors">Actualizar</button>
+      <button id="executeBatch" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors">Procesar lote</button>
+      <input id="rollbackBatchId" class="h-10 px-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="batch-..." />
+      <button id="rollbackBatch" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors">Rollback lote</button>
+      <button id="downloadCsv" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">Exportar CSV</button>
     </div>
   </div>
   <p id="requestOpsFeedback" class="mb-3 text-sm"></p>
-  <div class="overflow-x-auto rounded-lg border dark:border-gray-700">
+  <div class="overflow-x-auto rounded-lg border border-border">
     <table class="min-w-full text-sm">
-      <thead class="bg-gray-50 dark:bg-gray-800">
+      <thead class="bg-muted/50">
         <tr>
-          <th class="px-3 py-2 text-left dark:text-gray-200">Tipo</th>
-          <th class="px-3 py-2 text-left dark:text-gray-200">OU</th>
-          <th class="px-3 py-2 text-left dark:text-gray-200">Objetivo</th>
-          <th class="px-3 py-2 text-left dark:text-gray-200">Estado</th>
-          <th class="px-3 py-2 text-left dark:text-gray-200">Solicitud</th>
-          <th class="px-3 py-2 text-left dark:text-gray-200">Acciones</th>
+          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Tipo</th>
+          <th class="px-3 py-2 text-left font-medium text-muted-foreground">OU</th>
+          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Objetivo</th>
+          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
+          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Solicitud</th>
+          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Acciones</th>
         </tr>
       </thead>
-      <tbody id="requestRows" class="divide-y dark:divide-gray-700"></tbody>
+      <tbody id="requestRows" class="divide-y divide-border"></tbody>
     </table>
   </div>
 </div>
@@ -44,7 +44,7 @@
   function setFeedback(message: string, isError = false) {
     if (!feedback) return;
     feedback.textContent = message;
-    feedback.className = `mb-3 text-sm ${isError ? 'text-red-600' : 'text-green-600'}`;
+    feedback.className = `mb-3 text-sm ${isError ? 'text-destructive' : 'text-accent'}`;
   }
 
   function createActionButton(label: string, className: string, handler: () => Promise<void>) {
@@ -81,13 +81,13 @@
     rows.innerHTML = '';
     for (const request of requests) {
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-800';
+      tr.className = 'hover:bg-muted/30 transition-colors';
       tr.innerHTML = `
-        <td class="px-3 py-2 dark:text-gray-200">${request.type}</td>
-        <td class="px-3 py-2 dark:text-gray-300">${request.organizationalUnit || '-'}</td>
-        <td class="px-3 py-2 dark:text-gray-300">${request.payload?.targetEmail || '-'}</td>
-        <td class="px-3 py-2 dark:text-gray-200">${request.status}</td>
-        <td class="px-3 py-2 dark:text-gray-300">${request.requestorEmail}</td>
+        <td class="px-3 py-2 text-foreground">${request.type}</td>
+        <td class="px-3 py-2 text-muted-foreground">${request.organizationalUnit || '-'}</td>
+        <td class="px-3 py-2 text-muted-foreground">${request.payload?.targetEmail || '-'}</td>
+        <td class="px-3 py-2 text-foreground">${request.status}</td>
+        <td class="px-3 py-2 text-muted-foreground">${request.requestorEmail}</td>
         <td class="px-3 py-2"><div class="flex flex-wrap gap-1" data-actions></div></td>
       `;
       const actionContainer = tr.querySelector('[data-actions]') as HTMLDivElement | null;
@@ -95,7 +95,7 @@
       if (request.status === 'draft') {
         actionContainer?.appendChild(createActionButton(
           'Enviar',
-          'px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white',
+          'inline-flex items-center justify-center px-2 py-1 text-xs rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors',
           async () => {
             await patchRequest(request.id, { action: 'submit' });
             setFeedback('Solicitud enviada.');
@@ -106,7 +106,7 @@
       if (request.status === 'pending') {
         actionContainer?.appendChild(createActionButton(
           'Aprobar',
-          'px-2 py-1 text-xs rounded bg-green-600 hover:bg-green-700 text-white',
+          'inline-flex items-center justify-center px-2 py-1 text-xs rounded-md bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors',
           async () => {
             await patchRequest(request.id, { action: 'approve' });
             setFeedback('Solicitud aprobada.');
@@ -114,7 +114,7 @@
         ));
         actionContainer?.appendChild(createActionButton(
           'Rechazar',
-          'px-2 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white',
+          'inline-flex items-center justify-center px-2 py-1 text-xs rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors',
           async () => {
             const reason = prompt('Motivo de rechazo') || 'Sin detalle';
             await patchRequest(request.id, { action: 'reject', reason });

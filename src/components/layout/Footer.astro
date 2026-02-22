@@ -1,0 +1,77 @@
+---
+const socialNetworks = [
+  { name: 'Facebook', url: 'https://www.facebook.com/JCI.EC', icon: 'fab fa-facebook' },
+  { name: 'Instagram', url: 'https://www.instagram.com/jciecuador', icon: 'fab fa-instagram' },
+  { name: 'X (Twitter)', url: 'https://x.com/JCIEcuador/status/1873971655963484241', icon: 'fab fa-x-twitter' },
+  { name: 'LinkedIn', url: 'https://www.linkedin.com/company/jci-ecuador/posts/?feedView=all', icon: 'fab fa-linkedin' },
+  { name: 'TikTok', url: 'https://www.tiktok.com/@jci.ecuador', icon: 'fab fa-tiktok' },
+];
+---
+
+<footer class="border-t border-border bg-background">
+  <div class="w-full">
+    <img
+      src="/diseno-horizontal.png"
+      alt="Diseño JCI Ecuador"
+      class="w-full object-cover h-24"
+    />
+  </div>
+
+  <div class="container mx-auto px-4 py-6">
+    <div class="text-center mb-4">
+      <p class="text-foreground mb-3">
+        ¿Ya estás siguiendo las redes sociales de JCI Ecuador?
+      </p>
+      <div class="flex justify-center gap-4">
+        {socialNetworks.map(network => (
+          <a
+            href={network.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-muted-foreground hover:text-primary transition-colors"
+            title={network.name}
+          >
+            <i class={`${network.icon} text-2xl`}></i>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div
+      id="credits"
+      class="text-center text-sm text-muted-foreground pb-2 cursor-pointer hover:text-foreground transition-colors"
+    >
+      Hecho con ❤️ por <a
+        href="https://www.linkedin.com/in/anthoro/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-primary hover:underline"
+        id="author-link"
+      >Anthony Cabrera</a>, Director de Tecnologías de Información JCI Ecuador 2025.
+    </div>
+  </div>
+</footer>
+
+<script>
+  import confetti from 'canvas-confetti';
+
+  function launchConfetti() {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  }
+
+  const creditsArea = document.getElementById('credits');
+
+  creditsArea?.addEventListener('click', (e) => {
+    if (!(e.target as HTMLElement).closest('#author-link')) {
+      launchConfetti();
+    }
+  });
+</script>
+
+<style>
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+</style>
