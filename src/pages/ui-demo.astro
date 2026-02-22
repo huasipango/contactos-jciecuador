@@ -1,0 +1,598 @@
+---
+import Layout from '../layouts/Layout.astro';
+export const prerender = true;
+---
+
+<Layout title="UI Demo — Design System">
+  <main class="max-w-5xl mx-auto px-6 py-12 space-y-16">
+
+    <!-- ─── Hero ─────────────────────────────────────────────────────── -->
+    <section class="space-y-4">
+      <p class="text-xs font-medium uppercase tracking-widest text-primary">Design System Preview</p>
+      <h1 class="text-4xl font-bold text-foreground">JCI Ecuador — Tokens UI Demo</h1>
+      <p class="text-lg text-muted-foreground max-w-2xl">
+        Esta página muestra todos los tokens de diseño activos (colores, tipografía, botones, inputs, cards, tablas) en modo claro y oscuro. Usa el toggle de tema arriba a la derecha para probar.
+      </p>
+    </section>
+
+    <!-- ─── 1. Paleta de marca ───────────────────────────────────────── -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">1. Paleta de marca JCI</h2>
+      <p class="text-sm text-muted-foreground">Primitivos de marca. Disponibles como <code class="bg-muted px-1.5 py-0.5 rounded-sm text-xs font-mono">bg-jci-*</code> / <code class="bg-muted px-1.5 py-0.5 rounded-sm text-xs font-mono">text-jci-*</code>.</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div class="space-y-2 text-center">
+          <div class="h-20 rounded-lg bg-jci-blue border border-border"></div>
+          <p class="text-xs font-medium text-foreground">JCI Blue</p>
+          <p class="text-xs text-muted-foreground">#0097D7</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <div class="h-20 rounded-lg bg-jci-black border border-border"></div>
+          <p class="text-xs font-medium text-foreground">JCI Black</p>
+          <p class="text-xs text-muted-foreground">#130F2D</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <div class="h-20 rounded-lg bg-jci-white border border-border"></div>
+          <p class="text-xs font-medium text-foreground">JCI White</p>
+          <p class="text-xs text-muted-foreground">#FFFFFF</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <div class="h-20 rounded-lg bg-jci-navy border border-border"></div>
+          <p class="text-xs font-medium text-foreground">JCI Navy</p>
+          <p class="text-xs text-muted-foreground">#1F4789</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <div class="h-20 rounded-lg bg-jci-teal border border-border"></div>
+          <p class="text-xs font-medium text-foreground">JCI Teal</p>
+          <p class="text-xs text-muted-foreground">#57BCBC</p>
+        </div>
+        <div class="space-y-2 text-center">
+          <div class="h-20 rounded-lg bg-jci-yellow border border-border"></div>
+          <p class="text-xs font-medium text-foreground">JCI Yellow</p>
+          <p class="text-xs text-muted-foreground">#EFC40F</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 2. Tokens semánticos ─────────────────────────────────────── -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">2. Tokens semánticos (shadcn/ui)</h2>
+      <p class="text-sm text-muted-foreground">Estos cambian automáticamente con el tema claro/oscuro.</p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-background"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">background</p>
+            <p class="text-xs text-muted-foreground">bg-background</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-foreground"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">foreground</p>
+            <p class="text-xs text-muted-foreground">bg-foreground</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-primary"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">primary</p>
+            <p class="text-xs text-muted-foreground">JCI Blue</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-secondary"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">secondary</p>
+            <p class="text-xs text-muted-foreground">JCI Navy</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-accent"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">accent</p>
+            <p class="text-xs text-muted-foreground">JCI Teal</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-muted"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">muted</p>
+            <p class="text-xs text-muted-foreground">bg-muted</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-destructive"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">destructive</p>
+            <p class="text-xs text-muted-foreground">Errors</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-warning"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">warning</p>
+            <p class="text-xs text-muted-foreground">JCI Yellow</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-card border-b border-border"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">card</p>
+            <p class="text-xs text-muted-foreground">bg-card</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-popover border-b border-border"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">popover</p>
+            <p class="text-xs text-muted-foreground">bg-popover</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-border"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">border</p>
+            <p class="text-xs text-muted-foreground">border-border</p>
+          </div>
+        </div>
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="h-14 bg-ring"></div>
+          <div class="px-3 py-2 bg-card">
+            <p class="text-xs font-medium">ring</p>
+            <p class="text-xs text-muted-foreground">ring-ring</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 3. Tipografía ────────────────────────────────────────────── -->
+    <section class="space-y-6">
+      <h2 class="text-2xl font-semibold text-foreground">3. Tipografía</h2>
+      <p class="text-sm text-muted-foreground">Font family: <span class="font-semibold">Plus Jakarta Sans</span> (JCI oficial).</p>
+
+      <div class="space-y-4 bg-card rounded-xl border border-border p-6">
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-widest">H1 — 36px / Bold</p>
+          <h1 class="text-4xl font-bold text-foreground">Directorio Nacional</h1>
+        </div>
+        <hr class="border-border" />
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-widest">H2 — 30px / Semibold</p>
+          <h2 class="text-3xl font-semibold text-foreground">Gestión de cuentas</h2>
+        </div>
+        <hr class="border-border" />
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-widest">H3 — 24px / Semibold</p>
+          <h3 class="text-2xl font-semibold text-foreground">Solicitudes pendientes</h3>
+        </div>
+        <hr class="border-border" />
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-widest">H4 — 20px / Medium</p>
+          <h4 class="text-xl font-medium text-foreground">Detalles del usuario</h4>
+        </div>
+        <hr class="border-border" />
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-widest">Body — 16px / Regular</p>
+          <p class="text-base text-foreground">JCI Ecuador empodera a jóvenes líderes a través de oportunidades de desarrollo que crean impacto positivo en sus comunidades.</p>
+        </div>
+        <hr class="border-border" />
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-widest">Small — 14px / Regular</p>
+          <p class="text-sm text-muted-foreground">Último acceso: hace 3 días · Unidad: Presidencia Nacional</p>
+        </div>
+        <hr class="border-border" />
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground uppercase tracking-widest">Label — 12px / Medium / Uppercase</p>
+          <p class="text-xs font-medium uppercase tracking-widest text-primary">Usuarios activos</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 4. Botones ───────────────────────────────────────────────── -->
+    <section class="space-y-6">
+      <h2 class="text-2xl font-semibold text-foreground">4. Botones</h2>
+
+      <div class="space-y-6">
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Primary</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Guardar cambios
+            </button>
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm opacity-50 cursor-not-allowed">
+              Deshabilitado
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Secondary</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-secondary text-secondary-foreground font-medium text-sm hover:bg-secondary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Ver detalles
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Destructive</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-destructive text-destructive-foreground font-medium text-sm hover:bg-destructive/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Eliminar cuenta
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Outline</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md border border-input bg-background text-foreground font-medium text-sm hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Ghost</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md text-foreground font-medium text-sm hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              Más opciones
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Link</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center text-primary font-medium text-sm underline-offset-4 hover:underline">
+              Ver documentación
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Tamaños</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-primary-foreground font-medium text-xs">
+              Small
+            </button>
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm">
+              Default
+            </button>
+            <button class="inline-flex items-center justify-center h-12 px-8 rounded-lg bg-primary text-primary-foreground font-medium text-base">
+              Large
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Warning (JCI Yellow)</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-warning text-warning-foreground font-medium text-sm hover:bg-warning/90 transition-colors">
+              Abrir gestión de correos
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 5. Inputs ────────────────────────────────────────────────── -->
+    <section class="space-y-6">
+      <h2 class="text-2xl font-semibold text-foreground">5. Inputs</h2>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground" for="demo-text">Text input</label>
+          <input
+            id="demo-text"
+            type="text"
+            placeholder="nombre@jciecuador.com"
+            class="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground" for="demo-search">Search</label>
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              id="demo-search"
+              type="search"
+              placeholder="Buscar miembro..."
+              class="w-full h-10 pl-10 pr-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground" for="demo-select">Select</label>
+          <select
+            id="demo-select"
+            class="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors"
+          >
+            <option value="">Seleccionar unidad organizativa</option>
+            <option>Presidencia Nacional</option>
+            <option>Vicepresidencia</option>
+            <option>Secretaría General</option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground" for="demo-textarea">Textarea</label>
+          <textarea
+            id="demo-textarea"
+            rows="3"
+            placeholder="Describe el motivo de la solicitud..."
+            class="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors resize-y"
+          ></textarea>
+        </div>
+
+        <div class="space-y-3 md:col-span-2">
+          <p class="text-sm font-medium text-foreground">Checkbox & Radio</p>
+          <div class="flex flex-wrap gap-6">
+            <label class="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input type="checkbox" checked class="w-4 h-4 rounded-sm border border-input accent-primary" />
+              Activo
+            </label>
+            <label class="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input type="checkbox" class="w-4 h-4 rounded-sm border border-input accent-primary" />
+              Suspendido
+            </label>
+            <label class="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input type="radio" name="demo-radio" checked class="w-4 h-4 border border-input accent-primary" />
+              Crear cuenta
+            </label>
+            <label class="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input type="radio" name="demo-radio" class="w-4 h-4 border border-input accent-primary" />
+              Eliminar cuenta
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 6. Cards ─────────────────────────────────────────────────── -->
+    <section class="space-y-6">
+      <h2 class="text-2xl font-semibold text-foreground">6. Cards</h2>
+
+      <div class="grid md:grid-cols-4 gap-4">
+        <div class="bg-card border border-border rounded-lg p-5 space-y-1">
+          <p class="text-xs font-medium uppercase tracking-widest text-primary">Usuarios activos</p>
+          <p class="text-3xl font-bold text-card-foreground">247</p>
+          <p class="text-xs text-muted-foreground">+12 este mes</p>
+        </div>
+        <div class="bg-card border border-border rounded-lg p-5 space-y-1">
+          <p class="text-xs font-medium uppercase tracking-widest text-destructive">Suspendidos</p>
+          <p class="text-3xl font-bold text-card-foreground">5</p>
+          <p class="text-xs text-muted-foreground">Sin cambios</p>
+        </div>
+        <div class="bg-card border border-border rounded-lg p-5 space-y-1">
+          <p class="text-xs font-medium uppercase tracking-widest text-warning">Inactivos 90d</p>
+          <p class="text-3xl font-bold text-card-foreground">18</p>
+          <p class="text-xs text-muted-foreground">-3 vs mes anterior</p>
+        </div>
+        <div class="bg-card border border-border rounded-lg p-5 space-y-1">
+          <p class="text-xs font-medium uppercase tracking-widest text-accent">Sin acceso</p>
+          <p class="text-3xl font-bold text-card-foreground">8</p>
+          <p class="text-xs text-muted-foreground">Revisar</p>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="bg-card border border-border rounded-lg overflow-hidden">
+          <div class="bg-primary/10 p-5 border-b border-border">
+            <h3 class="text-lg font-semibold text-foreground">Información del directorio</h3>
+            <p class="text-sm text-muted-foreground mt-1">Accede al directorio de contactos de JCI Ecuador.</p>
+          </div>
+          <div class="p-5 space-y-3">
+            <p class="text-sm text-foreground">Esta aplicación muestra todos los miembros activos de la organización con su información de contacto.</p>
+            <button class="inline-flex items-center justify-center h-9 px-4 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors">
+              Ver directorio
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-card border border-border rounded-lg overflow-hidden">
+          <div class="bg-warning/10 p-5 border-b border-border">
+            <h3 class="text-lg font-semibold text-foreground">Gestión de correos</h3>
+            <p class="text-sm text-muted-foreground mt-1">Solicita nuevas cuentas o modificaciones.</p>
+          </div>
+          <div class="p-5 space-y-3">
+            <p class="text-sm text-foreground">Usa el módulo interno para solicitar nuevas cuentas, actualizar teléfono, recuperar contraseña o eliminar usuarios.</p>
+            <button class="inline-flex items-center justify-center h-9 px-4 rounded-md bg-warning text-warning-foreground font-medium text-sm hover:bg-warning/90 transition-colors">
+              Abrir gestión
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 7. Badges ────────────────────────────────────────────────── -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">7. Badges</h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground">Primary</span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">Secondary</span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent text-accent-foreground">Accent</span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive text-destructive-foreground">Destructive</span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning text-warning-foreground">Warning</span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">Muted</span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-border text-foreground">Outline</span>
+      </div>
+    </section>
+
+    <!-- ─── 8. Alerts ────────────────────────────────────────────────── -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">8. Alertas</h2>
+
+      <div class="space-y-3">
+        <div class="rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <p class="text-sm font-medium text-primary">Información</p>
+          <p class="text-sm text-foreground mt-1">Hay 12 solicitudes pendientes de revisión.</p>
+        </div>
+
+        <div class="rounded-lg border border-accent/30 bg-accent/5 p-4">
+          <p class="text-sm font-medium text-accent">Éxito</p>
+          <p class="text-sm text-foreground mt-1">La cuenta fue creada correctamente.</p>
+        </div>
+
+        <div class="rounded-lg border border-warning/30 bg-warning/5 p-4">
+          <p class="text-sm font-medium text-warning">Advertencia</p>
+          <p class="text-sm text-foreground mt-1">El usuario no ha iniciado sesión en más de 90 días.</p>
+        </div>
+
+        <div class="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <p class="text-sm font-medium text-destructive">Error</p>
+          <p class="text-sm text-foreground mt-1">No se pudo conectar con el servidor de autenticación.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 9. Tabla ─────────────────────────────────────────────────── -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">9. Tabla</h2>
+
+      <div class="bg-card border border-border rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/50">
+                <th class="text-left font-medium text-muted-foreground px-4 py-3">Nombre</th>
+                <th class="text-left font-medium text-muted-foreground px-4 py-3">Correo</th>
+                <th class="text-left font-medium text-muted-foreground px-4 py-3">Unidad</th>
+                <th class="text-left font-medium text-muted-foreground px-4 py-3">Estado</th>
+                <th class="text-right font-medium text-muted-foreground px-4 py-3">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              <tr class="hover:bg-muted/30 transition-colors">
+                <td class="px-4 py-3 font-medium text-foreground">María López</td>
+                <td class="px-4 py-3 text-muted-foreground">maria.lopez@jciecuador.com</td>
+                <td class="px-4 py-3 text-muted-foreground">Presidencia</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent/15 text-accent">Activo</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button class="text-xs font-medium text-primary hover:underline">Copiar correo</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-muted/30 transition-colors">
+                <td class="px-4 py-3 font-medium text-foreground">Carlos Mendoza</td>
+                <td class="px-4 py-3 text-muted-foreground">carlos.mendoza@jciecuador.com</td>
+                <td class="px-4 py-3 text-muted-foreground">Vicepresidencia</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent/15 text-accent">Activo</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button class="text-xs font-medium text-primary hover:underline">Copiar correo</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-muted/30 transition-colors">
+                <td class="px-4 py-3 font-medium text-foreground">Ana Torres</td>
+                <td class="px-4 py-3 text-muted-foreground">ana.torres@jciecuador.com</td>
+                <td class="px-4 py-3 text-muted-foreground">Secretaría</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/15 text-warning">Inactivo 90d</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button class="text-xs font-medium text-primary hover:underline">Copiar correo</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-muted/30 transition-colors">
+                <td class="px-4 py-3 font-medium text-foreground">Pedro Suárez</td>
+                <td class="px-4 py-3 text-muted-foreground">pedro.suarez@jciecuador.com</td>
+                <td class="px-4 py-3 text-muted-foreground">Tesorería</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/15 text-destructive">Suspendido</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button class="text-xs font-medium text-primary hover:underline">Copiar correo</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 10. Radius scale ─────────────────────────────────────────── -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">10. Escala de radius</h2>
+      <div class="flex flex-wrap items-end gap-6">
+        <div class="text-center space-y-2">
+          <div class="w-20 h-20 bg-primary/15 border-2 border-primary rounded-sm"></div>
+          <p class="text-xs text-muted-foreground">sm (4px)</p>
+        </div>
+        <div class="text-center space-y-2">
+          <div class="w-20 h-20 bg-primary/15 border-2 border-primary rounded-md"></div>
+          <p class="text-xs text-muted-foreground">md (8px)</p>
+        </div>
+        <div class="text-center space-y-2">
+          <div class="w-20 h-20 bg-primary/15 border-2 border-primary rounded-lg"></div>
+          <p class="text-xs text-muted-foreground">lg (12px)</p>
+        </div>
+        <div class="text-center space-y-2">
+          <div class="w-20 h-20 bg-primary/15 border-2 border-primary rounded-xl"></div>
+          <p class="text-xs text-muted-foreground">xl (16px)</p>
+        </div>
+        <div class="text-center space-y-2">
+          <div class="w-20 h-20 bg-primary/15 border-2 border-primary rounded-full"></div>
+          <p class="text-xs text-muted-foreground">full</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── 11. Foreground pairs ─────────────────────────────────────── -->
+    <section class="space-y-4">
+      <h2 class="text-2xl font-semibold text-foreground">11. Contraste foreground/background</h2>
+      <p class="text-sm text-muted-foreground">Cada par semántico usa la variante <code class="bg-muted px-1.5 py-0.5 rounded-sm text-xs font-mono">*-foreground</code> sobre su fondo.</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="rounded-lg p-4 bg-primary text-primary-foreground text-center">
+          <p class="text-sm font-semibold">Primary</p>
+          <p class="text-xs opacity-80">text-primary-foreground</p>
+        </div>
+        <div class="rounded-lg p-4 bg-secondary text-secondary-foreground text-center">
+          <p class="text-sm font-semibold">Secondary</p>
+          <p class="text-xs opacity-80">text-secondary-foreground</p>
+        </div>
+        <div class="rounded-lg p-4 bg-accent text-accent-foreground text-center">
+          <p class="text-sm font-semibold">Accent</p>
+          <p class="text-xs opacity-80">text-accent-foreground</p>
+        </div>
+        <div class="rounded-lg p-4 bg-destructive text-destructive-foreground text-center">
+          <p class="text-sm font-semibold">Destructive</p>
+          <p class="text-xs opacity-80">text-destructive-foreground</p>
+        </div>
+        <div class="rounded-lg p-4 bg-muted text-muted-foreground text-center">
+          <p class="text-sm font-semibold">Muted</p>
+          <p class="text-xs opacity-80">text-muted-foreground</p>
+        </div>
+        <div class="rounded-lg p-4 bg-card text-card-foreground border border-border text-center">
+          <p class="text-sm font-semibold">Card</p>
+          <p class="text-xs opacity-80">text-card-foreground</p>
+        </div>
+        <div class="rounded-lg p-4 bg-warning text-warning-foreground text-center">
+          <p class="text-sm font-semibold">Warning</p>
+          <p class="text-xs opacity-80">text-warning-foreground</p>
+        </div>
+        <div class="rounded-lg p-4 bg-popover text-popover-foreground border border-border text-center">
+          <p class="text-sm font-semibold">Popover</p>
+          <p class="text-xs opacity-80">text-popover-foreground</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Footer note ──────────────────────────────────────────────── -->
+    <footer class="border-t border-border pt-8 pb-4 text-center">
+      <p class="text-sm text-muted-foreground">
+        Tokens definidos en <code class="bg-muted px-1.5 py-0.5 rounded-sm text-xs font-mono">src/styles/tokens.css</code>
+        · Basado en <a href="/docs/ui/reference-audit.md" class="text-primary hover:underline">Reference Audit</a>
+        · JCI Brand Guidelines v1.4
+      </p>
+    </footer>
+
+  </main>
+</Layout>

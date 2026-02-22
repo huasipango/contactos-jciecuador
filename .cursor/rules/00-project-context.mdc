@@ -1,0 +1,37 @@
+---
+description: Contexto del proyecto + guardrails (NO romper funcionalidad)
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Contexto del proyecto (Contactos JCI Ecuador)
+
+## Stack actual (NO romper)
+- Framework: Astro 5 SSR (output: "server")
+- Deploy: Netlify con @astrojs/netlify (funciones serverless)
+- Auth: OAuth2 Google (cookies: access_token + oauth_state)
+- API: Google Admin SDK / Directory API (googleapis)
+- Persistencia: archivo local .data/requests-store.json (NO DB)
+- UI: Tailwind CSS (dark mode via class)
+
+## Objetivo de esta fase
+- Subir calidad visual con un **Design System token-driven** (Tailwind v4 `@theme`) y **shadcn/ui** (como islas React en Astro).
+- Implementar un **layout persistente** (Header + Footer) entre páginas.
+- Mantener la app estable y productiva (SSR + Netlify).
+
+## Reglas de seguridad (obligatorio)
+1) NO modificar flujos de autenticación, cookies, callbacks OAuth, ni middlewares.
+2) NO cambiar contratos de API, nombres de endpoints, ni lógica de Google Admin SDK.
+3) NO cambiar el formato de `.data/requests-store.json`.
+4) Evitar dependencias nuevas salvo que sean estrictamente necesarias para UI.
+
+## Definition of Done
+- `npm run build` pasa.
+- Navegación principal funciona (Directorio / Solicitudes / Créditos o equivalentes).
+- Dark mode sigue funcionando (class `.dark`).
+- Cualquier cambio de UI es reversible y está en commits pequeños.
+
+## Cómo trabajar
+- Trabaja en una rama: `ui/jci-brand-token-demo`
+- Cambios por pasos (layout → tokens → componentes → refactor de 1 pantalla).
+- Si hay dudas, crea un doc: `docs/ui/decisions.md` con lo decidido y por qué.

@@ -1,4 +1,6 @@
 ---
+import '../styles/global.css';
+
 interface Props {
   title: string;
 }
@@ -11,51 +13,59 @@ const { title } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
+
+    <!-- Plus Jakarta Sans (JCI official typeface) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- SEO básico -->
     <title>{title} | JCI Ecuador</title>
     <meta name="description" content="Directorio de contactos oficial de JCI Ecuador. Encuentra fácilmente los correos electrónicos de todos los miembros activos de la organización." />
     <meta name="author" content="Anthony Cabrera" />
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://contactos.jciecuador.com/" />
     <meta property="og:title" content={`${title} | JCI Ecuador`} />
     <meta property="og:description" content="Directorio de contactos oficial de JCI Ecuador. Encuentra fácilmente los correos electrónicos de todos los miembros activos de la organización." />
     <meta property="og:image" content="https://contactos.jciecuador.com/og-image.png" />
-    
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://contactos.jciecuador.com/" />
     <meta property="twitter:title" content={`${title} | JCI Ecuador`} />
     <meta property="twitter:description" content="Directorio de contactos oficial de JCI Ecuador. Encuentra fácilmente los correos electrónicos de todos los miembros activos de la organización." />
     <meta property="twitter:image" content="https://contactos.jciecuador.com/og-image.png" />
-    
+
     <!-- Metadatos adicionales -->
     <link rel="canonical" href="https://contactos.jciecuador.com/" />
     <meta name="referrer" content="origin" />
     <link rel="home" href="https://jciecuador.com" />
-    
-    <!-- Color del tema para móviles -->
-    <meta name="theme-color" content="#1e40af" />
+
+    <!-- Color del tema para móviles — JCI Blue -->
+    <meta name="theme-color" content="#0097D7" />
   </head>
-  <body class="min-h-screen dark:bg-transparent">
+  <body class="min-h-screen">
     <div class="fixed top-4 right-4 z-50">
       <button
         id="theme-toggle"
-        class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+        class="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
         aria-label="Cambiar tema"
       >
         <svg
           id="theme-toggle-dark-icon"
-          class="w-5 h-5 hidden dark:block text-gray-100"
+          class="w-5 h-5 hidden dark:block text-foreground"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -63,7 +73,7 @@ const { title } = Astro.props;
         </svg>
         <svg
           id="theme-toggle-light-icon"
-          class="w-5 h-5 block dark:hidden text-gray-800"
+          class="w-5 h-5 block dark:hidden text-foreground"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -78,33 +88,6 @@ const { title } = Astro.props;
 </html>
 
 <style is:global>
-  :root {
-    --accent: 136, 58, 234;
-    --accent-light: 224, 204, 250;
-    --accent-dark: 49, 10, 101;
-    --accent-gradient: linear-gradient(
-      45deg,
-      rgb(var(--accent)),
-      rgb(var(--accent-light)) 30%,
-      white 60%
-    );
-  }
-
-  html {
-    font-family: system-ui, sans-serif;
-    background: #fff;
-    background-size: 224px;
-  }
-
-  html.dark {
-    background: transparent;
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
   .dark body {
     background-image: url('/fondo.png');
     background-size: cover;
@@ -112,11 +95,11 @@ const { title } = Astro.props;
     background-repeat: no-repeat;
     background-attachment: fixed;
   }
-</style> 
+</style>
 
 <script>
   const themeToggle = document.getElementById('theme-toggle');
-  
+
   if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
   } else {
@@ -127,4 +110,4 @@ const { title } = Astro.props;
     document.documentElement.classList.toggle('dark');
     localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   });
-</script> 
+</script>
