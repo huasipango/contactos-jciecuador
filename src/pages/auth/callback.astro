@@ -6,6 +6,8 @@ export const prerender = false;
 
 const code = Astro.url.searchParams.get('code');
 const error = Astro.url.searchParams.get('error');
+const state = Astro.url.searchParams.get('state');
+const expectedState = Astro.cookies.get('oauth_state')?.value;
 
 if (error) {
   console.error('OAuth error:', error);
@@ -16,21 +18,37 @@ if (!code) {
   return Astro.redirect('/');
 }
 
+if (!state || !expectedState || state !== expectedState) {
+  Astro.cookies.delete('oauth_state', { path: '/' });
+  return Astro.redirect('/?error=oauth_state');
+}
+
 try {
   const tokens = await getTokenFromCode(code);
   if (tokens.access_token) {
-    // Configurar la cookie con opciones más seguras
     Astro.cookies.set('access_token', tokens.access_token, {
       path: '/',
       secure: true,
+      httpOnly: true,
       sameSite: 'lax',
-      maxAge: 3600 // 1 hora
+      maxAge: tokens.expiry_date
+        ? Math.max(Math.floor((tokens.expiry_date - Date.now()) / 1000), 60)
+        : 3600
     });
-    
+    if (tokens.refresh_token) {
+      Astro.cookies.set('refresh_token', tokens.refresh_token, {
+        path: '/',
+        secure: true,
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30
+      });
+    }
+    Astro.cookies.delete('oauth_state', { path: '/' });
     return Astro.redirect('/?auth=success');
   }
 } catch (error) {
-  console.error('Error getting tokens:', error);
+  console.error('Error getting tokens');
   return Astro.redirect('/?error=token');
 }
 

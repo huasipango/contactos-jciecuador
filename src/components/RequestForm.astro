@@ -1,0 +1,116 @@
+<div class="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-700 p-4">
+  <h2 class="text-lg font-semibold mb-4 dark:text-white">Nueva solicitud</h2>
+  <form id="requestForm" class="grid md:grid-cols-2 gap-3">
+    <label class="block text-sm">
+      <span class="text-gray-700 dark:text-gray-200">Tipo</span>
+      <select id="reqType" class="mt-1 w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+        <option value="create_account">Nueva cuenta</option>
+        <option value="update_phone">Actualizar teléfono</option>
+        <option value="reset_password">Recuperar contraseña</option>
+        <option value="delete_account">Eliminar cuenta</option>
+      </select>
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-gray-700 dark:text-gray-200">Unidad organizativa</span>
+      <input id="ou" class="mt-1 w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="/JCI Ecuador/..." />
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-gray-700 dark:text-gray-200">Correo objetivo</span>
+      <input id="targetEmail" class="mt-1 w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="usuario@jciecuador.com" />
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-gray-700 dark:text-gray-200">Teléfono</span>
+      <input id="phone" class="mt-1 w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="+593..." />
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-gray-700 dark:text-gray-200">Nombres</span>
+      <input id="givenName" class="mt-1 w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="Dos nombres" />
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-gray-700 dark:text-gray-200">Apellidos</span>
+      <input id="familyName" class="mt-1 w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="Dos apellidos" />
+    </label>
+
+    <label class="md:col-span-2 block text-sm">
+      <span class="text-gray-700 dark:text-gray-200">Motivo</span>
+      <textarea id="reason" rows="3" class="mt-1 w-full border rounded-md px-3 py-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white"></textarea>
+    </label>
+
+    <label class="md:col-span-2 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+      <input id="dryRun" type="checkbox" />
+      Simular (dry run)
+    </label>
+
+    <div class="md:col-span-2 flex gap-2">
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Guardar solicitud</button>
+      <button type="button" id="clearForm" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded-md">Limpiar</button>
+    </div>
+  </form>
+  <p id="requestFormFeedback" class="mt-3 text-sm"></p>
+</div>
+
+<script>
+  const form = document.getElementById('requestForm') as HTMLFormElement | null;
+  const feedback = document.getElementById('requestFormFeedback') as HTMLParagraphElement | null;
+  const clearButton = document.getElementById('clearForm') as HTMLButtonElement | null;
+
+  function setFeedback(message: string, isError = false) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = `mt-3 text-sm ${isError ? 'text-red-600' : 'text-green-600'}`;
+  }
+
+  function clearAll() {
+    (document.getElementById('reqType') as HTMLSelectElement).value = 'create_account';
+    (document.getElementById('ou') as HTMLInputElement).value = '';
+    (document.getElementById('targetEmail') as HTMLInputElement).value = '';
+    (document.getElementById('phone') as HTMLInputElement).value = '';
+    (document.getElementById('givenName') as HTMLInputElement).value = '';
+    (document.getElementById('familyName') as HTMLInputElement).value = '';
+    (document.getElementById('reason') as HTMLTextAreaElement).value = '';
+    (document.getElementById('dryRun') as HTMLInputElement).checked = false;
+  }
+
+  clearButton?.addEventListener('click', clearAll);
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setFeedback('Guardando solicitud...');
+    const payload = {
+      type: (document.getElementById('reqType') as HTMLSelectElement).value,
+      organizationalUnit: (document.getElementById('ou') as HTMLInputElement).value,
+      dryRun: (document.getElementById('dryRun') as HTMLInputElement).checked,
+      payload: {
+        targetEmail: (document.getElementById('targetEmail') as HTMLInputElement).value,
+        phone: (document.getElementById('phone') as HTMLInputElement).value,
+        givenName: (document.getElementById('givenName') as HTMLInputElement).value,
+        familyName: (document.getElementById('familyName') as HTMLInputElement).value,
+        orgUnitPath: (document.getElementById('ou') as HTMLInputElement).value,
+        reason: (document.getElementById('reason') as HTMLTextAreaElement).value
+      }
+    };
+
+    try {
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudo guardar la solicitud', true);
+        return;
+      }
+      setFeedback('Solicitud creada correctamente.');
+      clearAll();
+      window.dispatchEvent(new CustomEvent('requests:reload'));
+    } catch (error) {
+      setFeedback('Error al guardar solicitud', true);
+    }
+  });
+</script>

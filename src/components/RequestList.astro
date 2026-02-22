@@ -1,0 +1,183 @@
+<div class="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-700 p-4">
+  <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+    <h2 class="text-lg font-semibold dark:text-white">Bandeja de solicitudes</h2>
+    <div class="flex gap-2">
+      <button id="refreshRequests" class="px-3 py-2 text-sm rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">Actualizar</button>
+      <button id="executeBatch" class="px-3 py-2 text-sm rounded-md bg-green-600 hover:bg-green-700 text-white">Procesar lote</button>
+      <input id="rollbackBatchId" class="px-2 py-2 text-sm rounded-md border dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="batch-..." />
+      <button id="rollbackBatch" class="px-3 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white">Rollback lote</button>
+      <button id="downloadCsv" class="px-3 py-2 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white">Exportar CSV</button>
+    </div>
+  </div>
+  <p id="requestOpsFeedback" class="mb-3 text-sm"></p>
+  <div class="overflow-x-auto rounded-lg border dark:border-gray-700">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50 dark:bg-gray-800">
+        <tr>
+          <th class="px-3 py-2 text-left dark:text-gray-200">Tipo</th>
+          <th class="px-3 py-2 text-left dark:text-gray-200">OU</th>
+          <th class="px-3 py-2 text-left dark:text-gray-200">Objetivo</th>
+          <th class="px-3 py-2 text-left dark:text-gray-200">Estado</th>
+          <th class="px-3 py-2 text-left dark:text-gray-200">Solicitud</th>
+          <th class="px-3 py-2 text-left dark:text-gray-200">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="requestRows" class="divide-y dark:divide-gray-700"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  type RequestItem = {
+    id: string;
+    type: string;
+    status: string;
+    organizationalUnit: string;
+    requestorEmail: string;
+    payload: { targetEmail?: string };
+  };
+
+  const rows = document.getElementById('requestRows') as HTMLTableSectionElement | null;
+  const feedback = document.getElementById('requestOpsFeedback') as HTMLParagraphElement | null;
+  const executeBatchButton = document.getElementById('executeBatch') as HTMLButtonElement | null;
+
+  function setFeedback(message: string, isError = false) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = `mb-3 text-sm ${isError ? 'text-red-600' : 'text-green-600'}`;
+  }
+
+  function createActionButton(label: string, className: string, handler: () => Promise<void>) {
+    const button = document.createElement('button');
+    button.textContent = label;
+    button.className = className;
+    button.addEventListener('click', async () => {
+      await handler();
+      await loadRequests();
+    });
+    return button;
+  }
+
+  async function patchRequest(id: string, payload: Record<string, unknown>) {
+    const response = await fetch(`/api/requests/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'No se pudo actualizar');
+    return data;
+  }
+
+  async function loadRequests() {
+    if (!rows) return;
+    const response = await fetch('/api/requests');
+    const data = await response.json();
+    if (!response.ok) {
+      setFeedback(data.error || 'No se pudieron cargar las solicitudes', true);
+      return;
+    }
+    const requests: RequestItem[] = data.requests || [];
+    rows.innerHTML = '';
+    for (const request of requests) {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-800';
+      tr.innerHTML = `
+        <td class="px-3 py-2 dark:text-gray-200">${request.type}</td>
+        <td class="px-3 py-2 dark:text-gray-300">${request.organizationalUnit || '-'}</td>
+        <td class="px-3 py-2 dark:text-gray-300">${request.payload?.targetEmail || '-'}</td>
+        <td class="px-3 py-2 dark:text-gray-200">${request.status}</td>
+        <td class="px-3 py-2 dark:text-gray-300">${request.requestorEmail}</td>
+        <td class="px-3 py-2"><div class="flex flex-wrap gap-1" data-actions></div></td>
+      `;
+      const actionContainer = tr.querySelector('[data-actions]') as HTMLDivElement | null;
+
+      if (request.status === 'draft') {
+        actionContainer?.appendChild(createActionButton(
+          'Enviar',
+          'px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white',
+          async () => {
+            await patchRequest(request.id, { action: 'submit' });
+            setFeedback('Solicitud enviada.');
+          }
+        ));
+      }
+
+      if (request.status === 'pending') {
+        actionContainer?.appendChild(createActionButton(
+          'Aprobar',
+          'px-2 py-1 text-xs rounded bg-green-600 hover:bg-green-700 text-white',
+          async () => {
+            await patchRequest(request.id, { action: 'approve' });
+            setFeedback('Solicitud aprobada.');
+          }
+        ));
+        actionContainer?.appendChild(createActionButton(
+          'Rechazar',
+          'px-2 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white',
+          async () => {
+            const reason = prompt('Motivo de rechazo') || 'Sin detalle';
+            await patchRequest(request.id, { action: 'reject', reason });
+            setFeedback('Solicitud rechazada.');
+          }
+        ));
+      }
+
+      rows.appendChild(tr);
+    }
+  }
+
+  document.getElementById('refreshRequests')?.addEventListener('click', loadRequests);
+  document.getElementById('downloadCsv')?.addEventListener('click', () => {
+    window.location.href = '/api/requests/export.csv';
+  });
+
+  executeBatchButton?.addEventListener('click', async () => {
+    const dryRun = confirm('¿Deseas ejecutar en modo simulación (dry run)?');
+    setFeedback('Procesando lote...');
+    try {
+      const response = await fetch('/api/requests/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudo procesar el lote', true);
+        return;
+      }
+      setFeedback(`Lote procesado: ${data.total} solicitudes.`);
+      await loadRequests();
+    } catch (error) {
+      setFeedback('Error al procesar lote', true);
+    }
+  });
+
+  document.getElementById('rollbackBatch')?.addEventListener('click', async () => {
+    const batchId = (document.getElementById('rollbackBatchId') as HTMLInputElement | null)?.value || '';
+    if (!batchId) {
+      setFeedback('Ingresa un batchId para revertir.', true);
+      return;
+    }
+    setFeedback('Aplicando rollback...');
+    try {
+      const response = await fetch('/api/requests/rollback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batchId })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudo revertir el lote', true);
+        return;
+      }
+      setFeedback(`Rollback aplicado en ${data.total} solicitudes.`);
+      await loadRequests();
+    } catch (error) {
+      setFeedback('Error al aplicar rollback', true);
+    }
+  });
+
+  window.addEventListener('requests:reload', loadRequests);
+  loadRequests();
+</script>

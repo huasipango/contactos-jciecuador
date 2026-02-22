@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import UsersTable from '../components/UsersTable.astro';
-import { getUsers, getOrganizationalUnits, getAuthUrl } from '../utils/googleAdmin';
+import { getUsers, getOrganizationalUnits, getAuthUrl, generateOauthState } from '../utils/googleAdmin';
 
 export const prerender = false;
 
@@ -9,9 +9,23 @@ const accessToken = Astro.cookies.get('access_token')?.value;
 let users: any[] = [];
 let orgUnits: any[] = [];
 let error = null;
+let kpis = {
+  totalUsers: 0,
+  suspendedUsers: 0,
+  inactive90dUsers: 0,
+  withoutLastLogin: 0
+};
 
 if (!accessToken) {
-  const authUrl = await getAuthUrl();
+  const state = generateOauthState();
+  Astro.cookies.set('oauth_state', state, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600
+  });
+  const authUrl = await getAuthUrl(state);
   return Astro.redirect(authUrl);
 }
 
@@ -23,11 +37,26 @@ try {
 } catch (e: any) {
   if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
     Astro.cookies.delete('access_token');
-    const authUrl = await getAuthUrl();
+    const state = generateOauthState();
+    Astro.cookies.set('oauth_state', state, {
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 600
+    });
+    const authUrl = await getAuthUrl(state);
     return Astro.redirect(authUrl);
   }
   error = e.message;
 }
+
+kpis = {
+  totalUsers: users.length,
+  suspendedUsers: users.filter((user) => user.suspended).length,
+  inactive90dUsers: users.filter((user) => user.isInactive90d).length,
+  withoutLastLogin: users.filter((user) => !user.lastLoginTime).length
+};
 ---
 
 <Layout title="Directorio JCI Ecuador">
@@ -71,18 +100,39 @@ try {
         Directorio Nacional JCI Ecuador
       </h1>
 
+      <div class="grid md:grid-cols-4 gap-3 mb-6 max-w-6xl mx-auto">
+        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Usuarios activos</p>
+          <p class="text-2xl font-bold dark:text-white">{kpis.totalUsers - kpis.suspendedUsers}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Suspendidos</p>
+          <p class="text-2xl font-bold text-red-600">{kpis.suspendedUsers}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Sin acceso en 90 días</p>
+          <p class="text-2xl font-bold text-yellow-600">{kpis.inactive90dUsers}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
+          <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Sin último acceso</p>
+          <p class="text-2xl font-bold dark:text-white">{kpis.withoutLastLogin}</p>
+        </div>
+      </div>
+
       <div class="grid md:grid-cols-2 gap-4 mb-8 max-w-6xl mx-auto">
         {/* Primera caja - Información de búsqueda */}
         <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
           <p class="text-blue-800 dark:text-blue-100 text-sm">
-            Esta aplicación muestra el directorio de contactos de los miembros de JCI Ecuador. 
+            Esta aplicación muestra el directorio de contactos de los miembros de JCI Ecuador.
             Para copiar una dirección de correo electrónico, puede:
             <ul class="list-disc ml-6 mt-2 text-blue-800 dark:text-blue-100">
               <li>Hacer clic en cualquier parte de la fila del usuario</li>
               <li>O usar el botón "COPIAR CORREO" al final de cada fila</li>
+              <li>Filtrar por Unidad Organizativa</li>
+              <li>Ordenar por último acceso</li>
             </ul>
             <span class="text-blue-800 dark:text-blue-100">
-              Use el buscador para filtrar por nombre o correo electrónico.
+              Use el buscador para filtrar por nombre, correo o unidad organizativa.
             </span>
           </p>
         </div>
@@ -92,20 +142,18 @@ try {
           <div class="flex flex-col h-full justify-between">
             <div>
               <p class="text-yellow-800 dark:text-yellow-100 mb-2">
-                <span class="font-bold">¿Quieres solicitar agregar o eliminar un correo?</span>
+                <span class="font-bold">¿Necesitas gestionar una cuenta de correo?</span>
               </p>
               <p class="text-yellow-700 dark:text-yellow-200 text-sm">
-                Los Presidentes Locales pueden solicitar cambios en las direcciones de correo electrónico utilizando exclusivamente el correo oficial de su Organización Local (ejemplo: ambato@jciecuador.com).
+                Usa el módulo interno para solicitar nuevas cuentas, actualizar teléfono, recuperar contraseña o eliminar usuarios.
               </p>
             </div>
             <div class="mt-4 text-right">
               <a 
-                href="https://forms.gle/y7x3CKXZsqaE2Pgp9"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/requests"
                 class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md transition-colors"
               >
-                Solicitar correo
+                Abrir gestión de correos
               </a>
             </div>
           </div>

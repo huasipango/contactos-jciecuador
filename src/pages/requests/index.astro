@@ -1,0 +1,39 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import RequestForm from '../../components/RequestForm.astro';
+import RequestList from '../../components/RequestList.astro';
+import { getSessionUser } from '../../utils/auth';
+import { getAuthUrl, generateOauthState } from '../../utils/googleAdmin';
+
+export const prerender = false;
+
+const user = await getSessionUser(Astro);
+if (!user) {
+  const state = generateOauthState();
+  Astro.cookies.set('oauth_state', state, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600
+  });
+  const authUrl = await getAuthUrl(state);
+  return Astro.redirect(authUrl);
+}
+---
+
+<Layout title="Gestión de correos">
+  <main class="container mx-auto px-4 py-8 space-y-4">
+    <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
+      <h1 class="text-2xl font-bold dark:text-white">Gestión de cuentas de correo</h1>
+      <p class="text-sm text-blue-900 dark:text-blue-100 mt-1">
+        Rol actual: <span class="font-semibold">{user.role}</span> ({user.email})
+      </p>
+      <p class="text-sm text-blue-900 dark:text-blue-100 mt-1">
+        Flujo semi-automático activo: teléfono y recuperación de contraseña en automático; altas y bajas con aprobación.
+      </p>
+    </div>
+    <RequestForm />
+    <RequestList />
+  </main>
+</Layout>

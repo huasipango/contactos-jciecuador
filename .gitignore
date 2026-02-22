@@ -43,3 +43,4 @@ examples/**/env.d.ts
 
 # ignore credentials.json
 credentials.json
+.data/

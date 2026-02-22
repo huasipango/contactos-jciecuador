@@ -1,0 +1,46 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getSessionUser } from '../../utils/auth';
+import { getRequestById } from '../../utils/requestStore';
+import { getAuthUrl, generateOauthState } from '../../utils/googleAdmin';
+
+export const prerender = false;
+
+const user = await getSessionUser(Astro);
+if (!user) {
+  const state = generateOauthState();
+  Astro.cookies.set('oauth_state', state, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600
+  });
+  const authUrl = await getAuthUrl(state);
+  return Astro.redirect(authUrl);
+}
+
+const requestId = Astro.params.id || '';
+const request = await getRequestById(requestId);
+if (!request) {
+  return Astro.redirect('/requests');
+}
+---
+
+<Layout title={`Solicitud ${request.id}`}>
+  <main class="container mx-auto px-4 py-8">
+    <a href="/requests" class="text-blue-600 hover:text-blue-700 dark:text-blue-300">← Volver</a>
+    <div class="mt-4 bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-700 p-4">
+      <h1 class="text-xl font-semibold dark:text-white">Detalle de solicitud</h1>
+      <dl class="grid md:grid-cols-2 gap-3 mt-3">
+        <div><dt class="text-xs text-gray-500">ID</dt><dd class="dark:text-white">{request.id}</dd></div>
+        <div><dt class="text-xs text-gray-500">Tipo</dt><dd class="dark:text-white">{request.type}</dd></div>
+        <div><dt class="text-xs text-gray-500">Estado</dt><dd class="dark:text-white">{request.status}</dd></div>
+        <div><dt class="text-xs text-gray-500">OU</dt><dd class="dark:text-white">{request.organizationalUnit}</dd></div>
+        <div><dt class="text-xs text-gray-500">Solicitante</dt><dd class="dark:text-white">{request.requestorEmail}</dd></div>
+        <div><dt class="text-xs text-gray-500">Creada</dt><dd class="dark:text-white">{request.createdAt}</dd></div>
+      </dl>
+      <pre class="mt-4 text-xs bg-gray-50 dark:bg-gray-800 rounded-lg p-3 overflow-auto dark:text-gray-100">{JSON.stringify(request, null, 2)}</pre>
+    </div>
+  </main>
+</Layout>
