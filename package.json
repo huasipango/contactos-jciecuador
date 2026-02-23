@@ -5,7 +5,11 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "backfill:postgres": "node scripts/backfill-requests-to-postgres.mjs"
+    "backfill:postgres": "node scripts/backfill-requests-to-postgres.mjs",
+    "db:migrate:test": "bash scripts/run-migrations.sh test",
+    "db:migrate:production": "bash scripts/run-migrations.sh production",
+    "db:status": "bash scripts/migration-status.sh",
+    "db:promote": "bash scripts/promote-to-production.sh"
   },
   "dependencies": {
     "@astrojs/netlify": "^6.0.1",
