@@ -97,7 +97,7 @@ const hasLockedOrg = isPresidentLocal && Boolean(lockedOrgUnitPath);
     </label>
 
     <div class="flex gap-2 pt-1">
-      <button type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+      <button id="submitRequestButton" type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
         Enviar solicitud
       </button>
       <button type="button" id="clearForm" class="inline-flex items-center justify-center h-10 px-6 rounded-md border border-input bg-background text-foreground font-medium text-sm hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
@@ -112,10 +112,12 @@ const hasLockedOrg = isPresidentLocal && Boolean(lockedOrgUnitPath);
   const form = document.getElementById('requestForm');
   const feedback = document.getElementById('requestFormFeedback');
   const clearButton = document.getElementById('clearForm');
+  const submitButton = document.getElementById('submitRequestButton');
   const reqType = document.getElementById('reqType');
   const targetEmailGroup = document.getElementById('targetEmailGroup');
   const nameFields = document.getElementById('nameFields');
   const phoneGroup = document.getElementById('phoneGroup');
+  let editingRequestId = '';
 
   const FIELDS_BY_TYPE = {
     create_account: ['ou', 'givenName', 'familyName', 'phone', 'reason'],
@@ -176,6 +178,8 @@ const hasLockedOrg = isPresidentLocal && Boolean(lockedOrgUnitPath);
   }
 
   function clearAll() {
+    editingRequestId = '';
+    if (submitButton) submitButton.textContent = 'Enviar solicitud';
     reqType.value = '';
     ['targetEmail', 'phone', 'givenName', 'familyName', 'reason'].forEach((id) => {
       const el = document.getElementById(id);
@@ -190,7 +194,50 @@ const hasLockedOrg = isPresidentLocal && Boolean(lockedOrgUnitPath);
     if (feedback) feedback.textContent = '';
   }
 
+  function normalizePhoneForInput(phone) {
+    const digits = (phone || '').replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('593')) return digits.slice(3);
+    if (digits.startsWith('0')) return digits.slice(1);
+    return digits;
+  }
+
+  function loadRequestIntoForm(req) {
+    editingRequestId = req.id || '';
+    if (submitButton) submitButton.textContent = 'Actualizar solicitud';
+
+    reqType.value = req.type || '';
+    updateVisibility();
+
+    const ou = document.getElementById('ou');
+    if (ou && !hasLockedOrg) {
+      ou.value = req.organizationalUnit || req.payload?.orgUnitPath || '';
+    }
+
+    const payload = req.payload || {};
+    const targetEmail = document.getElementById('targetEmail');
+    const givenName = document.getElementById('givenName');
+    const familyName = document.getElementById('familyName');
+    const phone = document.getElementById('phone');
+    const reason = document.getElementById('reason');
+
+    if (targetEmail) targetEmail.value = payload.targetEmail || '';
+    if (givenName) givenName.value = payload.givenName || '';
+    if (familyName) familyName.value = payload.familyName || '';
+    if (phone) phone.value = normalizePhoneForInput(payload.phone || '');
+    if (reason) reason.value = payload.reason || '';
+
+    setFeedback('Edita los campos y luego actualiza la solicitud.');
+    clearErrors();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   clearButton?.addEventListener('click', clearAll);
+  window.addEventListener('requests:edit', (event) => {
+    const req = event?.detail;
+    if (!req) return;
+    loadRequestIntoForm(req);
+  });
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -215,17 +262,20 @@ const hasLockedOrg = isPresidentLocal && Boolean(lockedOrgUnitPath);
     };
 
     try {
-      const response = await fetch('/api/requests', {
-        method: 'POST',
+      const isEditing = Boolean(editingRequestId);
+      const url = isEditing ? `/api/requests/${editingRequestId}` : '/api/requests';
+      const body = isEditing ? { action: 'edit', payload: payload.payload } : payload;
+      const response = await fetch(url, {
+        method: isEditing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
       const data = await response.json();
       if (!response.ok) {
         setFeedback(data.error || 'No se pudo guardar la solicitud', true);
         return;
       }
-      setFeedback('Solicitud creada correctamente.');
+      setFeedback(isEditing ? 'Solicitud actualizada correctamente.' : 'Solicitud creada correctamente.');
       clearAll();
       window.dispatchEvent(new CustomEvent('requests:reload'));
     } catch {

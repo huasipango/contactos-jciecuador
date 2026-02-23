@@ -9,6 +9,7 @@ interface Props {
 const { userRole, orgUnits } = Astro.props;
 const isAdmin = userRole === 'administrador';
 const isFuncionario = userRole === 'funcionario_nacional';
+const isPresident = userRole === 'presidente_local';
 ---
 
 <div class="bg-card text-card-foreground rounded-lg border border-border p-5">
@@ -66,7 +67,7 @@ const isFuncionario = userRole === 'funcionario_nacional';
           {(isAdmin || isFuncionario) && (
             <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Solicitante</th>
           )}
-          {isAdmin && (
+          {(isAdmin || isPresident) && (
             <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Acciones</th>
           )}
         </tr>
@@ -76,6 +77,33 @@ const isFuncionario = userRole === 'funcionario_nacional';
   </div>
 
   <p id="emptyMessage" class="hidden text-center text-sm text-muted-foreground py-8">No hay solicitudes para mostrar.</p>
+
+  <div id="credentialsModal" class="fixed inset-0 z-50 hidden">
+    <div id="credentialsModalBackdrop" class="absolute inset-0 bg-black/50"></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+      <div class="w-full max-w-lg rounded-lg border border-border bg-card text-card-foreground shadow-xl">
+        <div class="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 class="text-base font-semibold text-foreground">Credenciales de acceso</h3>
+          <button id="closeCredentialsModal" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-foreground hover:bg-muted" aria-label="Cerrar">
+            ×
+          </button>
+        </div>
+        <div class="space-y-3 px-4 py-4">
+          <p class="text-sm text-muted-foreground">He cargado las credenciales de la cuenta. Comparte esta información de forma segura con la persona solicitante.</p>
+          <div id="credentialsModalContent" class="space-y-3"></div>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button id="copyCredentialsButton" class="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+              Copiar contenido
+            </button>
+            <button id="closeCredentialsModalSecondary" class="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md border border-input bg-background text-foreground font-medium hover:bg-muted transition-colors">
+              Cerrar
+            </button>
+          </div>
+          <p id="credentialsCopyFeedback" class="text-xs text-muted-foreground"></p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   {isAdmin && (
     <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
@@ -93,12 +121,12 @@ const isFuncionario = userRole === 'funcionario_nacional';
   )}
 </div>
 
-<script define:vars={{ userRole, isAdmin, isFuncionario }}>
-  window.__requestListConfig = { userRole, isAdmin, isFuncionario };
+<script define:vars={{ userRole, isAdmin, isFuncionario, isPresident }}>
+  window.__requestListConfig = { userRole, isAdmin, isFuncionario, isPresident };
 </script>
 
 <script>
-  const cfg = (window as any).__requestListConfig as { userRole: string; isAdmin: boolean; isFuncionario: boolean };
+  const cfg = (window as any).__requestListConfig as { userRole: string; isAdmin: boolean; isFuncionario: boolean; isPresident: boolean };
 
   const TYPE_LABELS: Record<string, string> = {
     create_account: 'Nueva cuenta',
@@ -126,15 +154,53 @@ const isFuncionario = userRole === 'funcionario_nacional';
     requestorEmail: string;
     createdAt: string;
     updatedAt: string;
-    payload: { targetEmail?: string; subjectDisplay?: string; givenName?: string; familyName?: string };
+    executedAt?: string;
+    payload: { targetEmail?: string; subjectDisplay?: string; givenName?: string; familyName?: string; phone?: string; reason?: string };
+    result?: { createdUser?: string; temporaryPassword?: string };
   };
 
   const rows = document.getElementById('requestRows') as HTMLTableSectionElement | null;
   const emptyMsg = document.getElementById('emptyMessage') as HTMLParagraphElement | null;
   const feedback = document.getElementById('requestOpsFeedback') as HTMLParagraphElement | null;
   const ouFilter = document.getElementById('ouFilter') as HTMLSelectElement | null;
+  const credentialsModal = document.getElementById('credentialsModal');
+  const credentialsModalBackdrop = document.getElementById('credentialsModalBackdrop');
+  const credentialsModalContent = document.getElementById('credentialsModalContent');
+  const credentialsCopyFeedback = document.getElementById('credentialsCopyFeedback');
+  const closeCredentialsModal = document.getElementById('closeCredentialsModal');
+  const closeCredentialsModalSecondary = document.getElementById('closeCredentialsModalSecondary');
+  const copyCredentialsButton = document.getElementById('copyCredentialsButton');
 
   let allRequests: RequestItem[] = [];
+  const MAIL_URL = 'https://mail.google.com/a/jciecuador.com';
+  let currentCredentialsText = '';
+
+  function getMonthNameEs(monthIndex: number) {
+    const monthNames = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre'
+    ];
+    return monthNames[monthIndex] || 'Mes';
+  }
+
+  function resolveTemporaryPassword(req: RequestItem) {
+    const value = (req.result?.temporaryPassword || '').trim();
+    if (value && value !== 'Configurada por política mensual') return value;
+    const referenceDate = req.executedAt || req.createdAt;
+    const parsedDate = new Date(referenceDate);
+    if (Number.isNaN(parsedDate.getTime())) return value || 'No disponible en esta solicitud';
+    return `Clave${getMonthNameEs(parsedDate.getMonth())}${parsedDate.getFullYear()}`;
+  }
 
   function setFeedback(message: string, isError = false) {
     if (!feedback) return;
@@ -162,6 +228,48 @@ const isFuncionario = userRole === 'funcionario_nacional';
     if (payload?.targetEmail?.trim()) return payload.targetEmail.trim();
     const fullName = `${payload?.givenName || ''} ${payload?.familyName || ''}`.trim();
     return fullName || 'Sin identificar';
+  }
+
+  function buildCredentialsText(req: RequestItem): string {
+    const accountEmail = req.result?.createdUser || req.payload?.targetEmail || 'No disponible';
+    const temporaryPassword = resolveTemporaryPassword(req);
+    return [
+      'He cargado las credenciales de la cuenta solicitada.',
+      '',
+      `Cuenta: ${accountEmail}`,
+      `CONTRASENA TEMPORAL: ${temporaryPassword}`,
+      '',
+      `Acceso webmail: ${MAIL_URL}`
+    ].join('\n');
+  }
+
+  function openCredentialsModal(req: RequestItem) {
+    currentCredentialsText = buildCredentialsText(req);
+    const accountEmail = req.result?.createdUser || req.payload?.targetEmail || 'No disponible';
+    const temporaryPassword = resolveTemporaryPassword(req);
+    if (credentialsModalContent) {
+      credentialsModalContent.innerHTML = `
+        <div class="rounded-md border border-border bg-muted p-3 text-xs text-foreground">
+          <p class="text-muted-foreground mb-1">Cuenta</p>
+          <p class="font-medium break-all">${accountEmail}</p>
+        </div>
+        <div class="rounded-md border border-primary/40 bg-primary/10 p-3 text-foreground">
+          <p class="text-xs font-semibold tracking-wide text-primary mb-1">CONTRASENA TEMPORAL</p>
+          <p class="text-base font-bold break-all">${temporaryPassword}</p>
+        </div>
+        <div class="rounded-md border border-border bg-muted p-3 text-xs text-foreground">
+          <p class="text-muted-foreground mb-1">Acceso webmail</p>
+          <p class="font-medium break-all">${MAIL_URL}</p>
+        </div>
+      `;
+    }
+    if (credentialsCopyFeedback) credentialsCopyFeedback.textContent = '';
+    credentialsModal?.classList.remove('hidden');
+  }
+
+  function closeModal() {
+    credentialsModal?.classList.add('hidden');
+    if (credentialsCopyFeedback) credentialsCopyFeedback.textContent = '';
   }
 
   function renderRequests(requests: RequestItem[]) {
@@ -194,24 +302,43 @@ const isFuncionario = userRole === 'funcionario_nacional';
         html += `<td class="px-3 py-2.5 text-muted-foreground text-xs">${req.requestorEmail}</td>`;
       }
 
-      if (cfg.isAdmin) {
+      if (cfg.isAdmin || cfg.isPresident) {
         html += `<td class="px-3 py-2.5"><div class="flex flex-wrap gap-1" data-actions></div></td>`;
       }
 
       tr.innerHTML = html;
 
-      if (cfg.isAdmin) {
+      if (cfg.isAdmin || cfg.isPresident) {
         const actionContainer = tr.querySelector('[data-actions]') as HTMLDivElement | null;
 
         if (req.status === 'pending') {
-          actionContainer?.appendChild(makeBtn('Aprobar', 'bg-green-600 text-white hover:bg-green-700', async () => {
-            await patchRequest(req.id, { action: 'approve' });
-            setFeedback('Solicitud aprobada.');
-          }));
-          actionContainer?.appendChild(makeBtn('Rechazar', 'bg-destructive text-destructive-foreground hover:bg-destructive/90', async () => {
-            const reason = prompt('Motivo de rechazo') || 'Sin detalle';
-            await patchRequest(req.id, { action: 'reject', reason });
-            setFeedback('Solicitud rechazada.');
+          if (cfg.isAdmin) {
+            actionContainer?.appendChild(makeBtn('Aprobar', 'bg-green-600 text-white hover:bg-green-700', async () => {
+              await patchRequest(req.id, { action: 'approve' });
+              setFeedback('Solicitud aprobada y ejecutada.');
+            }));
+            actionContainer?.appendChild(makeBtn('Rechazar', 'bg-destructive text-destructive-foreground hover:bg-destructive/90', async () => {
+              const reason = prompt('Motivo de rechazo') || 'Sin detalle';
+              await patchRequest(req.id, { action: 'reject', reason });
+              setFeedback('Solicitud rechazada.');
+            }));
+          }
+
+          if (cfg.isPresident) {
+            actionContainer?.appendChild(makeBtn('Editar', 'border border-input bg-background text-foreground hover:bg-muted', async () => {
+              openFormForEdit(req);
+            }));
+            actionContainer?.appendChild(makeBtn('Eliminar', 'bg-destructive text-destructive-foreground hover:bg-destructive/90', async () => {
+              if (!confirm('¿Seguro que deseas eliminar esta solicitud?')) return;
+              await deleteRequest(req.id);
+              setFeedback('Solicitud eliminada.');
+            }));
+          }
+        }
+
+        if (req.status === 'executed' && (cfg.isAdmin || cfg.isPresident)) {
+          actionContainer?.appendChild(makeBtn('Mostrar credenciales', 'bg-primary text-primary-foreground hover:bg-primary/90', async () => {
+            openCredentialsModal(req);
           }));
         }
       }
@@ -247,6 +374,20 @@ const isFuncionario = userRole === 'funcionario_nacional';
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'No se pudo actualizar');
     return data;
+  }
+
+  async function deleteRequest(id: string) {
+    const response = await fetch(`/api/requests/${id}`, {
+      method: 'DELETE',
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'No se pudo eliminar');
+    return data;
+  }
+
+  function openFormForEdit(req: RequestItem) {
+    window.dispatchEvent(new CustomEvent('requests:edit', { detail: req }));
+    setFeedback('Solicitud cargada en el formulario para edición.');
   }
 
   function applyFilter() {
@@ -324,6 +465,25 @@ const isFuncionario = userRole === 'funcionario_nacional';
       await loadRequests();
     } catch {
       setFeedback('Error al aplicar rollback', true);
+    }
+  });
+
+  credentialsModalBackdrop?.addEventListener('click', closeModal);
+  closeCredentialsModal?.addEventListener('click', closeModal);
+  closeCredentialsModalSecondary?.addEventListener('click', closeModal);
+  copyCredentialsButton?.addEventListener('click', async () => {
+    if (!currentCredentialsText) return;
+    try {
+      await navigator.clipboard.writeText(currentCredentialsText);
+      if (credentialsCopyFeedback) {
+        credentialsCopyFeedback.textContent = 'Contenido copiado al portapapeles.';
+        credentialsCopyFeedback.className = 'text-xs text-accent';
+      }
+    } catch {
+      if (credentialsCopyFeedback) {
+        credentialsCopyFeedback.textContent = 'No se pudo copiar. Intenta manualmente.';
+        credentialsCopyFeedback.className = 'text-xs text-destructive';
+      }
     }
   });
 

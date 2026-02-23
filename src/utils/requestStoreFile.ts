@@ -74,6 +74,15 @@ export async function updateRequestById(id: string, updater: (current: Workspace
   return store.requests[index];
 }
 
+export async function deleteRequestById(id: string) {
+  const store = await readStore();
+  const index = store.requests.findIndex((item) => item.id === id);
+  if (index === -1) return null;
+  const [removed] = store.requests.splice(index, 1);
+  await saveStore(store);
+  return removed;
+}
+
 export async function appendAuditEvent(event: Omit<RequestAuditEvent, 'id' | 'createdAt'>) {
   const store = await readStore();
   const auditEvent: RequestAuditEvent = {

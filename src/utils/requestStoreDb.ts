@@ -216,6 +216,17 @@ export async function updateRequestById(id: string, updater: (current: Workspace
   return mapRequestRow(rows[0]);
 }
 
+export async function deleteRequestById(id: string) {
+  const sql = getSqlClient();
+  const rows = await sql<DbWorkspaceRequestRow[]>`
+    DELETE FROM workspace_requests
+    WHERE id = ${id}::uuid
+    RETURNING *
+  `;
+  if (rows.length === 0) return null;
+  return mapRequestRow(rows[0]);
+}
+
 export async function appendAuditEvent(event: Omit<RequestAuditEvent, 'id' | 'createdAt'>) {
   const sql = getSqlClient();
   const rows = await sql<DbRequestAuditEventRow[]>`

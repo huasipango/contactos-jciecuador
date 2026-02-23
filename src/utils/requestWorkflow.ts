@@ -4,6 +4,7 @@ import {
   deleteWorkspaceUser,
   findUserByEmail,
   generateWorkspaceEmailAlias,
+  getCurrentTemporaryPassword,
   resetWorkspaceUserPassword,
   updateWorkspaceUserPhone
 } from './googleAdmin';
@@ -115,6 +116,7 @@ export async function executeRequest(requestId: string, accessToken: string, act
               request.payload.givenName || '',
               request.payload.familyName || ''
             );
+          const temporaryPassword = getCurrentTemporaryPassword();
           const created = await createWorkspaceUser(accessToken, {
             givenName: request.payload.givenName || '',
             familyName: request.payload.familyName || '',
@@ -122,7 +124,7 @@ export async function executeRequest(requestId: string, accessToken: string, act
             primaryEmail: generatedEmail,
             phone: request.payload.phone || ''
           });
-          result = { createdUser: created.email, temporaryPassword: 'Configurada por política mensual' };
+          result = { createdUser: created.email, temporaryPassword };
         } else if (request.type === 'update_phone') {
           const updated = await updateWorkspaceUserPhone(
             accessToken,

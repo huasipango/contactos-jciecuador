@@ -8,6 +8,7 @@ type RequestStore = {
   getRequestById: (id: string) => Promise<WorkspaceRequest | null>;
   createRequest: (input: WorkspaceRequest) => Promise<WorkspaceRequest>;
   updateRequestById: (id: string, updater: (current: WorkspaceRequest) => WorkspaceRequest) => Promise<WorkspaceRequest | null>;
+  deleteRequestById: (id: string) => Promise<WorkspaceRequest | null>;
   appendAuditEvent: (event: Omit<RequestAuditEvent, 'id' | 'createdAt'>) => Promise<RequestAuditEvent>;
   withExecutionLock: <T>(task: () => Promise<T>) => Promise<T>;
 };
@@ -42,6 +43,10 @@ export async function createRequest(input: WorkspaceRequest) {
 
 export async function updateRequestById(id: string, updater: (current: WorkspaceRequest) => WorkspaceRequest) {
   return resolveStore().updateRequestById(id, updater);
+}
+
+export async function deleteRequestById(id: string) {
+  return resolveStore().deleteRequestById(id);
 }
 
 export async function appendAuditEvent(event: Omit<RequestAuditEvent, 'id' | 'createdAt'>) {
