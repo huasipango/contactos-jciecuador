@@ -3,7 +3,7 @@ import { getSessionUser } from '../../../utils/auth';
 import { createRequest, listRequests, appendAuditEvent } from '../../../utils/requestStore';
 import { buildRequestId, resolveExecutionMode } from '../../../utils/requestWorkflow';
 import type { RequestType, WorkspaceRequest } from '../../../types';
-import { findUserByEmail } from '../../../utils/googleAdmin';
+import { findUserByEmail, getOrganizationalUnits } from '../../../utils/googleAdmin';
 
 const VALID_TYPES: RequestType[] = ['create_account', 'update_phone', 'reset_password', 'delete_account'];
 
@@ -13,6 +13,34 @@ function buildSubjectDisplay(body: any) {
   const fullName = `${givenName} ${familyName}`.trim();
   const targetEmail = (body?.payload?.targetEmail || '').trim();
   return fullName || targetEmail || 'Sin identificar';
+}
+
+function normalizeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function resolvePresidentOrgPath(
+  currentOrgPath: string,
+  userFullName: string,
+  localOrgs: Array<{ name: string; path: string; parentPath: string }>
+) {
+  const localOrgPaths = new Set(localOrgs.map((org) => org.path));
+  if (currentOrgPath && currentOrgPath !== '/' && localOrgPaths.has(currentOrgPath)) {
+    return currentOrgPath;
+  }
+
+  const normalizedFullName = normalizeText(userFullName);
+  if (!normalizedFullName) return currentOrgPath || '';
+
+  const byName = localOrgs.find((org) => normalizeText(org.name) === normalizedFullName);
+  if (byName) return byName.path;
+
+  return currentOrgPath || '';
 }
 
 export const GET: APIRoute = async (context) => {
@@ -58,13 +86,19 @@ export const POST: APIRoute = async (context) => {
   if (user.role === 'presidente_local') {
     try {
       const actorProfile = await findUserByEmail(user.accessToken, user.email);
-      organizationalUnit = actorProfile.organizationalUnit;
+      const allOrgUnits = await getOrganizationalUnits(user.accessToken);
+      const localOrgs = allOrgUnits.filter((org) => org.parentPath === '/Organizaciones Locales');
+      organizationalUnit = resolvePresidentOrgPath(
+        actorProfile.organizationalUnit || '',
+        actorProfile.fullName || '',
+        localOrgs
+      );
     } catch {
       return new Response(JSON.stringify({ error: 'No se pudo validar la organización local del solicitante' }), { status: 400 });
     }
 
-    if (!organizationalUnit) {
-      return new Response(JSON.stringify({ error: 'No se encontró una organización local asignada para tu usuario' }), { status: 400 });
+    if (!organizationalUnit || organizationalUnit === '/') {
+      return new Response(JSON.stringify({ error: 'No se encontró coincidencia con una organización local válida para tu usuario' }), { status: 400 });
     }
   }
 

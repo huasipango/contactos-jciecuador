@@ -34,14 +34,47 @@ try {
 }
 
 const localOrgs = allOrgUnits.filter((u) => u.parentPath === '/Organizaciones Locales');
+
+function normalizeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function resolvePresidentOrgPath(
+  currentOrgPath: string,
+  userFullName: string,
+  orgs: Array<{ name: string; path: string; parentPath: string }>
+) {
+  const localOrgPaths = new Set(orgs.map((org) => org.path));
+  if (currentOrgPath && currentOrgPath !== '/' && localOrgPaths.has(currentOrgPath)) {
+    return currentOrgPath;
+  }
+
+  const normalizedFullName = normalizeText(userFullName);
+  if (!normalizedFullName) return currentOrgPath || '';
+
+  const byName = orgs.find((org) => normalizeText(org.name) === normalizedFullName);
+  if (byName) return byName.path;
+
+  return currentOrgPath || '';
+}
 let presidentLockedOrgPath = '';
 let presidentLockedOrgName = '';
 
 if (user.role === 'presidente_local') {
   try {
     const directoryUser = await findUserByEmail(user.accessToken, user.email);
-    presidentLockedOrgPath = directoryUser.organizationalUnit || '';
-    presidentLockedOrgName = directoryUser.organizationalUnitName || '';
+    presidentLockedOrgPath = resolvePresidentOrgPath(
+      directoryUser.organizationalUnit || '',
+      directoryUser.fullName || '',
+      localOrgs
+    );
+    const matchedOrg = localOrgs.find((org) => org.path === presidentLockedOrgPath);
+    presidentLockedOrgName = matchedOrg?.name || directoryUser.organizationalUnitName || '';
   } catch (e: any) {
     console.error('Error al obtener OU del presidente local:', e.message);
   }
