@@ -126,7 +126,7 @@ const isFuncionario = userRole === 'funcionario_nacional';
     requestorEmail: string;
     createdAt: string;
     updatedAt: string;
-    payload: { targetEmail?: string };
+    payload: { targetEmail?: string; subjectDisplay?: string; givenName?: string; familyName?: string };
   };
 
   const rows = document.getElementById('requestRows') as HTMLTableSectionElement | null;
@@ -157,6 +157,13 @@ const isFuncionario = userRole === 'funcionario_nacional';
     return path.split('/').filter(Boolean).pop() || path;
   }
 
+  function getAccountDisplay(payload: RequestItem['payload']): string {
+    if (payload?.subjectDisplay?.trim()) return payload.subjectDisplay.trim();
+    if (payload?.targetEmail?.trim()) return payload.targetEmail.trim();
+    const fullName = `${payload?.givenName || ''} ${payload?.familyName || ''}`.trim();
+    return fullName || 'Sin identificar';
+  }
+
   function renderRequests(requests: RequestItem[]) {
     if (!rows) return;
     rows.innerHTML = '';
@@ -176,7 +183,7 @@ const isFuncionario = userRole === 'funcionario_nacional';
       let html = `
         <td class="px-3 py-2.5 text-foreground font-medium">${TYPE_LABELS[req.type] || req.type}</td>
         <td class="px-3 py-2.5 text-muted-foreground">${ouName(req.organizationalUnit)}</td>
-        <td class="px-3 py-2.5 text-muted-foreground text-xs">${req.payload?.targetEmail || '—'}</td>
+        <td class="px-3 py-2.5 text-muted-foreground text-xs">${getAccountDisplay(req.payload || {})}</td>
         <td class="px-3 py-2.5">
           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}">${statusInfo.label}</span>
         </td>
@@ -195,13 +202,6 @@ const isFuncionario = userRole === 'funcionario_nacional';
 
       if (cfg.isAdmin) {
         const actionContainer = tr.querySelector('[data-actions]') as HTMLDivElement | null;
-
-        if (req.status === 'draft') {
-          actionContainer?.appendChild(makeBtn('Enviar', 'bg-primary text-primary-foreground hover:bg-primary/90', async () => {
-            await patchRequest(req.id, { action: 'submit' });
-            setFeedback('Solicitud enviada.');
-          }));
-        }
 
         if (req.status === 'pending') {
           actionContainer?.appendChild(makeBtn('Aprobar', 'bg-green-600 text-white hover:bg-green-700', async () => {

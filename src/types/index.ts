@@ -65,6 +65,7 @@ export type RequestStatus =
 
 export interface RequestPayload {
   targetEmail?: string;
+  subjectDisplay?: string;
   givenName?: string;
   familyName?: string;
   orgUnitPath?: string;

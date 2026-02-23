@@ -1,9 +1,14 @@
 ---
 interface Props {
   orgUnits: Array<{ name: string; path: string }>;
+  userRole?: string;
+  lockedOrgUnitPath?: string;
+  lockedOrgUnitName?: string;
 }
 
-const { orgUnits } = Astro.props;
+const { orgUnits, userRole = '', lockedOrgUnitPath = '', lockedOrgUnitName = '' } = Astro.props;
+const isPresidentLocal = userRole === 'presidente_local';
+const hasLockedOrg = isPresidentLocal && Boolean(lockedOrgUnitPath);
 ---
 
 <div class="bg-card text-card-foreground rounded-lg border border-border p-5">
@@ -28,12 +33,22 @@ const { orgUnits } = Astro.props;
       <!-- Unidad Organizativa -->
       <label class="block text-sm">
         <span class="text-foreground font-medium">Organización Local <span class="text-destructive">*</span></span>
-        <select id="ou" required class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors">
+        <select
+          id="ou"
+          required
+          disabled={hasLockedOrg}
+          class:list={[
+            'mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors',
+            hasLockedOrg && 'cursor-not-allowed bg-muted text-muted-foreground'
+          ]}
+        >
           <option value="">— Selecciona —</option>
+          {hasLockedOrg && <option value={lockedOrgUnitPath} selected>{lockedOrgUnitName || lockedOrgUnitPath}</option>}
           {orgUnits.map((unit) => (
-            <option value={unit.path}>{unit.name}</option>
+            <option value={unit.path} selected={unit.path === lockedOrgUnitPath && !hasLockedOrg}>{unit.name}</option>
           ))}
         </select>
+        {hasLockedOrg && <p class="text-xs text-muted-foreground mt-1">Tu organización local está asignada por tu perfil.</p>}
         <p class="text-xs text-destructive mt-1 hidden" data-error="ou">Selecciona una organización local.</p>
       </label>
     </div>
@@ -93,16 +108,16 @@ const { orgUnits } = Astro.props;
   <p id="requestFormFeedback" class="mt-3 text-sm"></p>
 </div>
 
-<script>
-  const form = document.getElementById('requestForm') as HTMLFormElement | null;
-  const feedback = document.getElementById('requestFormFeedback') as HTMLParagraphElement | null;
-  const clearButton = document.getElementById('clearForm') as HTMLButtonElement | null;
-  const reqType = document.getElementById('reqType') as HTMLSelectElement;
-  const targetEmailGroup = document.getElementById('targetEmailGroup') as HTMLDivElement;
-  const nameFields = document.getElementById('nameFields') as HTMLDivElement;
-  const phoneGroup = document.getElementById('phoneGroup') as HTMLDivElement;
+<script define:vars={{ hasLockedOrg, lockedOrgUnitPath }}>
+  const form = document.getElementById('requestForm');
+  const feedback = document.getElementById('requestFormFeedback');
+  const clearButton = document.getElementById('clearForm');
+  const reqType = document.getElementById('reqType');
+  const targetEmailGroup = document.getElementById('targetEmailGroup');
+  const nameFields = document.getElementById('nameFields');
+  const phoneGroup = document.getElementById('phoneGroup');
 
-  const FIELDS_BY_TYPE: Record<string, string[]> = {
+  const FIELDS_BY_TYPE = {
     create_account: ['ou', 'givenName', 'familyName', 'phone', 'reason'],
     update_phone: ['ou', 'targetEmail', 'phone', 'reason'],
     reset_password: ['ou', 'targetEmail', 'reason'],
@@ -123,8 +138,8 @@ const { orgUnits } = Astro.props;
   reqType.addEventListener('change', updateVisibility);
   updateVisibility();
 
-  function showError(fieldId: string) {
-    const el = document.querySelector(`[data-error="${fieldId}"]`) as HTMLElement | null;
+  function showError(fieldId) {
+    const el = document.querySelector(`[data-error="${fieldId}"]`);
     el?.classList.remove('hidden');
   }
 
@@ -132,7 +147,7 @@ const { orgUnits } = Astro.props;
     document.querySelectorAll('[data-error]').forEach((el) => el.classList.add('hidden'));
   }
 
-  function validate(): boolean {
+  function validate() {
     clearErrors();
     const type = reqType.value;
     if (!type) { showError('reqType'); return false; }
@@ -141,7 +156,7 @@ const { orgUnits } = Astro.props;
     let valid = true;
 
     for (const id of required) {
-      const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+      const el = document.getElementById(id);
       if (!el || !el.value.trim()) {
         showError(id);
         valid = false;
@@ -150,22 +165,26 @@ const { orgUnits } = Astro.props;
     return valid;
   }
 
-  function setFeedback(message: string, isError = false) {
+  function setFeedback(message, isError = false) {
     if (!feedback) return;
     feedback.textContent = message;
     feedback.className = `mt-3 text-sm ${isError ? 'text-destructive' : 'text-accent'}`;
   }
 
-  function getVal(id: string): string {
-    return (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null)?.value?.trim() || '';
+  function getVal(id) {
+    return document.getElementById(id)?.value?.trim() || '';
   }
 
   function clearAll() {
     reqType.value = '';
-    ['ou', 'targetEmail', 'phone', 'givenName', 'familyName', 'reason'].forEach((id) => {
-      const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+    ['targetEmail', 'phone', 'givenName', 'familyName', 'reason'].forEach((id) => {
+      const el = document.getElementById(id);
       if (el) el.value = '';
     });
+    const ou = document.getElementById('ou');
+    if (ou) {
+      ou.value = hasLockedOrg ? lockedOrgUnitPath : '';
+    }
     clearErrors();
     updateVisibility();
     if (feedback) feedback.textContent = '';

@@ -4,7 +4,7 @@ import RequestForm from '../../components/RequestForm.astro';
 import RequestList from '../../components/RequestList.astro';
 import Alert from '../../components/ui/Alert.astro';
 import { getSessionUser } from '../../utils/auth';
-import { getAuthUrl, generateOauthState, getOrganizationalUnits } from '../../utils/googleAdmin';
+import { getAuthUrl, generateOauthState, getOrganizationalUnits, findUserByEmail } from '../../utils/googleAdmin';
 
 export const prerender = false;
 
@@ -34,6 +34,18 @@ try {
 }
 
 const localOrgs = allOrgUnits.filter((u) => u.parentPath === '/Organizaciones Locales');
+let presidentLockedOrgPath = '';
+let presidentLockedOrgName = '';
+
+if (user.role === 'presidente_local') {
+  try {
+    const directoryUser = await findUserByEmail(user.accessToken, user.email);
+    presidentLockedOrgPath = directoryUser.organizationalUnit || '';
+    presidentLockedOrgName = directoryUser.organizationalUnitName || '';
+  } catch (e: any) {
+    console.error('Error al obtener OU del presidente local:', e.message);
+  }
+}
 
 const showForm = user.role === 'presidente_local' || user.role === 'administrador';
 
@@ -53,7 +65,14 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
       </p>
     </div>
 
-    {showForm && <RequestForm orgUnits={localOrgs} />}
+    {showForm && (
+      <RequestForm
+        orgUnits={localOrgs}
+        userRole={user.role}
+        lockedOrgUnitPath={presidentLockedOrgPath}
+        lockedOrgUnitName={presidentLockedOrgName}
+      />
+    )}
 
     <RequestList userRole={user.role} orgUnits={localOrgs} />
   </main>

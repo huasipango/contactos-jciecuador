@@ -3,8 +3,17 @@ import { getSessionUser } from '../../../utils/auth';
 import { createRequest, listRequests, appendAuditEvent } from '../../../utils/requestStore';
 import { buildRequestId, resolveExecutionMode } from '../../../utils/requestWorkflow';
 import type { RequestType, WorkspaceRequest } from '../../../types';
+import { findUserByEmail } from '../../../utils/googleAdmin';
 
 const VALID_TYPES: RequestType[] = ['create_account', 'update_phone', 'reset_password', 'delete_account'];
+
+function buildSubjectDisplay(body: any) {
+  const givenName = (body?.payload?.givenName || '').trim();
+  const familyName = (body?.payload?.familyName || '').trim();
+  const fullName = `${givenName} ${familyName}`.trim();
+  const targetEmail = (body?.payload?.targetEmail || '').trim();
+  return fullName || targetEmail || 'Sin identificar';
+}
 
 export const GET: APIRoute = async (context) => {
   const user = await getSessionUser(context);
@@ -42,21 +51,37 @@ export const POST: APIRoute = async (context) => {
 
   const now = new Date().toISOString();
   const executionMode = resolveExecutionMode(body.type);
-  const status = executionMode === 'automatic' ? 'pending' : 'draft';
+  const status = 'pending';
+  const subjectDisplay = buildSubjectDisplay(body);
+
+  let organizationalUnit = body.organizationalUnit || body.payload?.orgUnitPath || '';
+  if (user.role === 'presidente_local') {
+    try {
+      const actorProfile = await findUserByEmail(user.accessToken, user.email);
+      organizationalUnit = actorProfile.organizationalUnit;
+    } catch {
+      return new Response(JSON.stringify({ error: 'No se pudo validar la organización local del solicitante' }), { status: 400 });
+    }
+
+    if (!organizationalUnit) {
+      return new Response(JSON.stringify({ error: 'No se encontró una organización local asignada para tu usuario' }), { status: 400 });
+    }
+  }
 
   const request: WorkspaceRequest = {
     id: buildRequestId(),
     type: body.type,
     status,
-    organizationalUnit: body.organizationalUnit || body.payload?.orgUnitPath || '',
+    organizationalUnit,
     requestorEmail: user.email,
     requestorRole: user.role,
     executionMode,
     payload: {
       targetEmail: body.payload?.targetEmail || '',
+      subjectDisplay,
       givenName: body.payload?.givenName || '',
       familyName: body.payload?.familyName || '',
-      orgUnitPath: body.payload?.orgUnitPath || '',
+      orgUnitPath: organizationalUnit,
       phone: body.payload?.phone || '',
       reason: body.payload?.reason || 'Sin motivo especificado'
     },
