@@ -16,6 +16,10 @@ interface ImportMetaEnv {
   readonly SERVICE_ACCOUNT_CLIENT_EMAIL?: string;
   readonly SERVICE_ACCOUNT_PRIVATE_KEY?: string;
   readonly WORKSPACE_ADMIN_EMAIL?: string;
+  readonly DATA_STORE?: 'file' | 'postgres';
+  readonly DATABASE_URL?: string;
+  readonly EXECUTION_LOCK_KEY?: string;
+  readonly EXECUTION_LOCK_TTL_SECONDS?: string;
 }
 
 interface ImportMeta {

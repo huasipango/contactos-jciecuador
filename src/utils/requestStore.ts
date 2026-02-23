@@ -1,103 +1,53 @@
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
 import type { RequestAuditEvent, WorkspaceRequest } from '../types';
+import * as fileStore from './requestStoreFile';
+import * as dbStore from './requestStoreDb';
 
-interface StoreShape {
-  requests: WorkspaceRequest[];
-  auditEvents: RequestAuditEvent[];
+type RequestStore = {
+  listRequests: () => Promise<WorkspaceRequest[]>;
+  listAuditEvents: () => Promise<RequestAuditEvent[]>;
+  getRequestById: (id: string) => Promise<WorkspaceRequest | null>;
+  createRequest: (input: WorkspaceRequest) => Promise<WorkspaceRequest>;
+  updateRequestById: (id: string, updater: (current: WorkspaceRequest) => WorkspaceRequest) => Promise<WorkspaceRequest | null>;
+  appendAuditEvent: (event: Omit<RequestAuditEvent, 'id' | 'createdAt'>) => Promise<RequestAuditEvent>;
+  withExecutionLock: <T>(task: () => Promise<T>) => Promise<T>;
+};
+
+function resolveStoreMode() {
+  const mode = process.env.DATA_STORE || import.meta.env.DATA_STORE || 'file';
+  return mode.toLowerCase();
 }
 
-const DATA_DIR = resolve(process.cwd(), '.data');
-const STORE_FILE = resolve(DATA_DIR, 'requests-store.json');
-const LOCK_FILE = resolve(DATA_DIR, 'execution.lock');
-
-const EMPTY_STORE: StoreShape = { requests: [], auditEvents: [] };
-
-async function ensureStore() {
-  if (!existsSync(DATA_DIR)) {
-    await mkdir(DATA_DIR, { recursive: true });
+function resolveStore(): RequestStore {
+  if (resolveStoreMode() === 'postgres') {
+    return dbStore;
   }
-  if (!existsSync(STORE_FILE)) {
-    await writeFile(STORE_FILE, JSON.stringify(EMPTY_STORE, null, 2), 'utf-8');
-  }
-}
-
-async function readStore(): Promise<StoreShape> {
-  await ensureStore();
-  const raw = await readFile(STORE_FILE, 'utf-8');
-  try {
-    const parsed = JSON.parse(raw) as StoreShape;
-    return {
-      requests: parsed.requests || [],
-      auditEvents: parsed.auditEvents || []
-    };
-  } catch {
-    return EMPTY_STORE;
-  }
-}
-
-async function saveStore(data: StoreShape) {
-  await ensureStore();
-  await writeFile(STORE_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  return fileStore;
 }
 
 export async function listRequests() {
-  const store = await readStore();
-  return store.requests.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return resolveStore().listRequests();
 }
 
 export async function listAuditEvents() {
-  const store = await readStore();
-  return store.auditEvents.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return resolveStore().listAuditEvents();
 }
 
 export async function getRequestById(id: string) {
-  const store = await readStore();
-  return store.requests.find((request) => request.id === id) || null;
+  return resolveStore().getRequestById(id);
 }
 
 export async function createRequest(input: WorkspaceRequest) {
-  const store = await readStore();
-  store.requests.push(input);
-  await saveStore(store);
-  return input;
+  return resolveStore().createRequest(input);
 }
 
 export async function updateRequestById(id: string, updater: (current: WorkspaceRequest) => WorkspaceRequest) {
-  const store = await readStore();
-  const index = store.requests.findIndex((item) => item.id === id);
-  if (index === -1) return null;
-  store.requests[index] = updater(store.requests[index]);
-  await saveStore(store);
-  return store.requests[index];
+  return resolveStore().updateRequestById(id, updater);
 }
 
 export async function appendAuditEvent(event: Omit<RequestAuditEvent, 'id' | 'createdAt'>) {
-  const store = await readStore();
-  const auditEvent: RequestAuditEvent = {
-    id: randomUUID(),
-    createdAt: new Date().toISOString(),
-    ...event
-  };
-  store.auditEvents.push(auditEvent);
-  await saveStore(store);
-  return auditEvent;
+  return resolveStore().appendAuditEvent(event);
 }
 
 export async function withExecutionLock<T>(task: () => Promise<T>): Promise<T> {
-  await ensureStore();
-  if (existsSync(LOCK_FILE)) {
-    throw new Error('Ya existe una ejecución en curso. Intenta nuevamente en unos segundos.');
-  }
-
-  await writeFile(LOCK_FILE, String(Date.now()), 'utf-8');
-  try {
-    return await task();
-  } finally {
-    if (existsSync(LOCK_FILE)) {
-      await unlink(LOCK_FILE);
-    }
-  }
+  return resolveStore().withExecutionLock(task);
 }

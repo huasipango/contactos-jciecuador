@@ -4,11 +4,13 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "backfill:postgres": "node scripts/backfill-requests-to-postgres.mjs"
   },
   "dependencies": {
     "@astrojs/netlify": "^6.0.1",
     "@heroicons/react": "^2.2.0",
+    "@neondatabase/serverless": "latest",
     "@tailwindcss/vite": "^4.2.0",
     "astro": "^5.1.1",
     "canvas-confetti": "^1.9.3",
