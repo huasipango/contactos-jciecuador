@@ -4,7 +4,7 @@ import RequestForm from '../../components/RequestForm.astro';
 import RequestList from '../../components/RequestList.astro';
 import Alert from '../../components/ui/Alert.astro';
 import { getSessionUser } from '../../utils/auth';
-import { getAuthUrl, generateOauthState } from '../../utils/googleAdmin';
+import { getAuthUrl, generateOauthState, getOrganizationalUnits } from '../../utils/googleAdmin';
 
 export const prerender = false;
 
@@ -21,20 +21,40 @@ if (!user) {
   const authUrl = await getAuthUrl(state);
   return Astro.redirect(authUrl);
 }
+
+if (user.role === 'miembro') {
+  return Astro.redirect('/?error=acceso_denegado');
+}
+
+let allOrgUnits: Array<{ name: string; path: string; parentPath: string }> = [];
+try {
+  allOrgUnits = await getOrganizationalUnits(user.accessToken);
+} catch (e: any) {
+  console.error('Error al cargar OUs:', e.message);
+}
+
+const localOrgs = allOrgUnits.filter((u) => u.parentPath === '/Organizaciones Locales');
+
+const showForm = user.role === 'presidente_local' || user.role === 'administrador';
+
+const ROLE_DESCRIPTIONS: Record<string, string> = {
+  administrador: 'Tienes acceso completo: puedes crear solicitudes, aprobar, rechazar y procesar lotes.',
+  funcionario_nacional: 'Puedes consultar todas las solicitudes y filtrar por organización local.',
+  presidente_local: 'Puedes crear solicitudes y dar seguimiento a las que has realizado.',
+};
 ---
 
 <Layout title="Gestión de correos" user={user}>
-  <main class="container mx-auto px-4 py-8 space-y-4">
-    <Alert variant="info">
+  <main class="container mx-auto px-4 py-8 space-y-5">
+    <div>
       <h1 class="text-2xl font-bold text-foreground">Gestión de cuentas de correo</h1>
-      <p class="text-sm text-foreground mt-1">
-        Rol actual: <span class="font-semibold">{user.roleLabel}</span> ({user.email})
+      <p class="text-sm text-muted-foreground mt-1">
+        {ROLE_DESCRIPTIONS[user.role] || ''}
       </p>
-      <p class="text-sm text-foreground mt-1">
-        Flujo semi-automático activo: teléfono y recuperación de contraseña en automático; altas y bajas con aprobación.
-      </p>
-    </Alert>
-    <RequestForm />
-    <RequestList />
+    </div>
+
+    {showForm && <RequestForm orgUnits={localOrgs} />}
+
+    <RequestList userRole={user.role} orgUnits={localOrgs} />
   </main>
 </Layout>

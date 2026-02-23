@@ -1,45 +1,140 @@
-<div class="bg-card text-card-foreground rounded-lg border border-border p-4">
-  <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-    <h2 class="text-lg font-semibold text-foreground">Bandeja de solicitudes</h2>
-    <div class="flex gap-2">
-      <button id="refreshRequests" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md border border-input bg-background text-foreground font-medium hover:bg-muted transition-colors">Actualizar</button>
-      <button id="executeBatch" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors">Procesar lote</button>
-      <input id="rollbackBatchId" class="h-10 px-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="batch-..." />
-      <button id="rollbackBatch" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors">Rollback lote</button>
-      <button id="downloadCsv" class="inline-flex items-center justify-center h-10 px-3 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">Exportar CSV</button>
+---
+import type { UserRole } from '../types';
+
+interface Props {
+  userRole: UserRole;
+  orgUnits: Array<{ name: string; path: string }>;
+}
+
+const { userRole, orgUnits } = Astro.props;
+const isAdmin = userRole === 'administrador';
+const isFuncionario = userRole === 'funcionario_nacional';
+---
+
+<div class="bg-card text-card-foreground rounded-lg border border-border p-5">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div>
+      <h2 class="text-lg font-semibold text-foreground">
+        {isAdmin ? 'Gestión de solicitudes' : 'Historial de solicitudes'}
+      </h2>
+      <p class="text-sm text-muted-foreground">
+        {isAdmin && 'Puedes aprobar, rechazar y procesar solicitudes.'}
+        {isFuncionario && 'Vista de todas las solicitudes por organización local.'}
+        {userRole === 'presidente_local' && 'Solicitudes que has realizado y su estado actual.'}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button id="refreshRequests" class="inline-flex items-center gap-1.5 justify-center h-9 px-3 text-sm rounded-md border border-input bg-background text-foreground font-medium hover:bg-muted transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+        Actualizar
+      </button>
+      {(isAdmin || isFuncionario) && (
+        <button id="downloadCsv" class="inline-flex items-center gap-1.5 justify-center h-9 px-3 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          Exportar CSV
+        </button>
+      )}
     </div>
   </div>
+
+  {/* OU filter for funcionarios and admins */}
+  {(isFuncionario || isAdmin) && (
+    <div class="mb-4">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Filtrar por Organización Local</span>
+        <select id="ouFilter" class="mt-1 w-full md:w-72 h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors">
+          <option value="">Todas las organizaciones</option>
+          {orgUnits.map((unit) => (
+            <option value={unit.path}>{unit.name}</option>
+          ))}
+        </select>
+      </label>
+    </div>
+  )}
+
   <p id="requestOpsFeedback" class="mb-3 text-sm"></p>
+
   <div class="overflow-x-auto rounded-lg border border-border">
     <table class="min-w-full text-sm">
       <thead class="bg-muted/50">
         <tr>
-          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Tipo</th>
-          <th class="px-3 py-2 text-left font-medium text-muted-foreground">OU</th>
-          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Objetivo</th>
-          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
-          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Solicitud</th>
-          <th class="px-3 py-2 text-left font-medium text-muted-foreground">Acciones</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Tipo</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Organización</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Cuenta</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Estado</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Fecha</th>
+          {(isAdmin || isFuncionario) && (
+            <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Solicitante</th>
+          )}
+          {isAdmin && (
+            <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Acciones</th>
+          )}
         </tr>
       </thead>
       <tbody id="requestRows" class="divide-y divide-border"></tbody>
     </table>
   </div>
+
+  <p id="emptyMessage" class="hidden text-center text-sm text-muted-foreground py-8">No hay solicitudes para mostrar.</p>
+
+  {isAdmin && (
+    <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+      <span class="text-sm font-medium text-foreground">Administración:</span>
+      <button id="executeBatch" class="inline-flex items-center gap-1.5 justify-center h-9 px-4 text-sm rounded-md bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors">
+        Procesar lote pendiente
+      </button>
+      <div class="flex items-center gap-1">
+        <input id="rollbackBatchId" class="h-9 w-40 px-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="batch-..." />
+        <button id="rollbackBatch" class="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors">
+          Revertir lote
+        </button>
+      </div>
+    </div>
+  )}
 </div>
 
+<script define:vars={{ userRole, isAdmin, isFuncionario }}>
+  window.__requestListConfig = { userRole, isAdmin, isFuncionario };
+</script>
+
 <script>
+  const cfg = (window as any).__requestListConfig as { userRole: string; isAdmin: boolean; isFuncionario: boolean };
+
+  const TYPE_LABELS: Record<string, string> = {
+    create_account: 'Nueva cuenta',
+    update_phone: 'Actualizar teléfono',
+    reset_password: 'Recuperar contraseña',
+    delete_account: 'Eliminar cuenta',
+  };
+
+  const STATUS_LABELS: Record<string, { label: string; class: string }> = {
+    draft: { label: 'Borrador', class: 'bg-muted text-muted-foreground' },
+    pending: { label: 'Pendiente', class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    approved: { label: 'Aprobada', class: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+    rejected: { label: 'Rechazada', class: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+    executing: { label: 'Ejecutando', class: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
+    executed: { label: 'Ejecutada', class: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+    error: { label: 'Error', class: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+    rolled_back: { label: 'Revertida', class: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300' },
+  };
+
   type RequestItem = {
     id: string;
     type: string;
     status: string;
     organizationalUnit: string;
     requestorEmail: string;
+    createdAt: string;
+    updatedAt: string;
     payload: { targetEmail?: string };
   };
 
   const rows = document.getElementById('requestRows') as HTMLTableSectionElement | null;
+  const emptyMsg = document.getElementById('emptyMessage') as HTMLParagraphElement | null;
   const feedback = document.getElementById('requestOpsFeedback') as HTMLParagraphElement | null;
-  const executeBatchButton = document.getElementById('executeBatch') as HTMLButtonElement | null;
+  const ouFilter = document.getElementById('ouFilter') as HTMLSelectElement | null;
+
+  let allRequests: RequestItem[] = [];
 
   function setFeedback(message: string, isError = false) {
     if (!feedback) return;
@@ -47,13 +142,98 @@
     feedback.className = `mb-3 text-sm ${isError ? 'text-destructive' : 'text-accent'}`;
   }
 
-  function createActionButton(label: string, className: string, handler: () => Promise<void>) {
+  function formatDate(iso: string): string {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })
+        + ' ' + d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return iso;
+    }
+  }
+
+  function ouName(path: string): string {
+    if (!path) return '—';
+    return path.split('/').filter(Boolean).pop() || path;
+  }
+
+  function renderRequests(requests: RequestItem[]) {
+    if (!rows) return;
+    rows.innerHTML = '';
+
+    if (requests.length === 0) {
+      emptyMsg?.classList.remove('hidden');
+      return;
+    }
+    emptyMsg?.classList.add('hidden');
+
+    for (const req of requests) {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-muted/30 transition-colors';
+
+      const statusInfo = STATUS_LABELS[req.status] || { label: req.status, class: 'bg-muted text-muted-foreground' };
+
+      let html = `
+        <td class="px-3 py-2.5 text-foreground font-medium">${TYPE_LABELS[req.type] || req.type}</td>
+        <td class="px-3 py-2.5 text-muted-foreground">${ouName(req.organizationalUnit)}</td>
+        <td class="px-3 py-2.5 text-muted-foreground text-xs">${req.payload?.targetEmail || '—'}</td>
+        <td class="px-3 py-2.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}">${statusInfo.label}</span>
+        </td>
+        <td class="px-3 py-2.5 text-muted-foreground text-xs">${formatDate(req.createdAt)}</td>
+      `;
+
+      if (cfg.isAdmin || cfg.isFuncionario) {
+        html += `<td class="px-3 py-2.5 text-muted-foreground text-xs">${req.requestorEmail}</td>`;
+      }
+
+      if (cfg.isAdmin) {
+        html += `<td class="px-3 py-2.5"><div class="flex flex-wrap gap-1" data-actions></div></td>`;
+      }
+
+      tr.innerHTML = html;
+
+      if (cfg.isAdmin) {
+        const actionContainer = tr.querySelector('[data-actions]') as HTMLDivElement | null;
+
+        if (req.status === 'draft') {
+          actionContainer?.appendChild(makeBtn('Enviar', 'bg-primary text-primary-foreground hover:bg-primary/90', async () => {
+            await patchRequest(req.id, { action: 'submit' });
+            setFeedback('Solicitud enviada.');
+          }));
+        }
+
+        if (req.status === 'pending') {
+          actionContainer?.appendChild(makeBtn('Aprobar', 'bg-green-600 text-white hover:bg-green-700', async () => {
+            await patchRequest(req.id, { action: 'approve' });
+            setFeedback('Solicitud aprobada.');
+          }));
+          actionContainer?.appendChild(makeBtn('Rechazar', 'bg-destructive text-destructive-foreground hover:bg-destructive/90', async () => {
+            const reason = prompt('Motivo de rechazo') || 'Sin detalle';
+            await patchRequest(req.id, { action: 'reject', reason });
+            setFeedback('Solicitud rechazada.');
+          }));
+        }
+      }
+
+      rows.appendChild(tr);
+    }
+  }
+
+  function makeBtn(label: string, classes: string, handler: () => Promise<void>) {
     const button = document.createElement('button');
     button.textContent = label;
-    button.className = className;
+    button.className = `inline-flex items-center justify-center px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${classes}`;
     button.addEventListener('click', async () => {
-      await handler();
-      await loadRequests();
+      button.disabled = true;
+      button.textContent = '...';
+      try {
+        await handler();
+        await loadRequests();
+      } catch (e: any) {
+        setFeedback(e.message || 'Error', true);
+      }
+      button.disabled = false;
     });
     return button;
   }
@@ -62,84 +242,53 @@
     const response = await fetch(`/api/requests/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'No se pudo actualizar');
     return data;
   }
 
+  function applyFilter() {
+    const filterValue = ouFilter?.value || '';
+    const filtered = filterValue
+      ? allRequests.filter((r) => r.organizationalUnit === filterValue)
+      : allRequests;
+    renderRequests(filtered);
+  }
+
   async function loadRequests() {
     if (!rows) return;
-    const response = await fetch('/api/requests');
-    const data = await response.json();
-    if (!response.ok) {
-      setFeedback(data.error || 'No se pudieron cargar las solicitudes', true);
-      return;
-    }
-    const requests: RequestItem[] = data.requests || [];
-    rows.innerHTML = '';
-    for (const request of requests) {
-      const tr = document.createElement('tr');
-      tr.className = 'hover:bg-muted/30 transition-colors';
-      tr.innerHTML = `
-        <td class="px-3 py-2 text-foreground">${request.type}</td>
-        <td class="px-3 py-2 text-muted-foreground">${request.organizationalUnit || '-'}</td>
-        <td class="px-3 py-2 text-muted-foreground">${request.payload?.targetEmail || '-'}</td>
-        <td class="px-3 py-2 text-foreground">${request.status}</td>
-        <td class="px-3 py-2 text-muted-foreground">${request.requestorEmail}</td>
-        <td class="px-3 py-2"><div class="flex flex-wrap gap-1" data-actions></div></td>
-      `;
-      const actionContainer = tr.querySelector('[data-actions]') as HTMLDivElement | null;
-
-      if (request.status === 'draft') {
-        actionContainer?.appendChild(createActionButton(
-          'Enviar',
-          'inline-flex items-center justify-center px-2 py-1 text-xs rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors',
-          async () => {
-            await patchRequest(request.id, { action: 'submit' });
-            setFeedback('Solicitud enviada.');
-          }
-        ));
+    try {
+      const response = await fetch('/api/requests');
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudieron cargar las solicitudes', true);
+        return;
       }
-
-      if (request.status === 'pending') {
-        actionContainer?.appendChild(createActionButton(
-          'Aprobar',
-          'inline-flex items-center justify-center px-2 py-1 text-xs rounded-md bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors',
-          async () => {
-            await patchRequest(request.id, { action: 'approve' });
-            setFeedback('Solicitud aprobada.');
-          }
-        ));
-        actionContainer?.appendChild(createActionButton(
-          'Rechazar',
-          'inline-flex items-center justify-center px-2 py-1 text-xs rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors',
-          async () => {
-            const reason = prompt('Motivo de rechazo') || 'Sin detalle';
-            await patchRequest(request.id, { action: 'reject', reason });
-            setFeedback('Solicitud rechazada.');
-          }
-        ));
-      }
-
-      rows.appendChild(tr);
+      allRequests = (data.requests || []).sort(
+        (a: RequestItem, b: RequestItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      applyFilter();
+    } catch {
+      setFeedback('Error al cargar solicitudes', true);
     }
   }
 
+  ouFilter?.addEventListener('change', applyFilter);
   document.getElementById('refreshRequests')?.addEventListener('click', loadRequests);
   document.getElementById('downloadCsv')?.addEventListener('click', () => {
     window.location.href = '/api/requests/export.csv';
   });
 
-  executeBatchButton?.addEventListener('click', async () => {
-    const dryRun = confirm('¿Deseas ejecutar en modo simulación (dry run)?');
+  document.getElementById('executeBatch')?.addEventListener('click', async () => {
+    if (!confirm('¿Procesar todas las solicitudes pendientes?')) return;
     setFeedback('Procesando lote...');
     try {
       const response = await fetch('/api/requests/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dryRun })
+        body: JSON.stringify({ dryRun: false }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -148,7 +297,7 @@
       }
       setFeedback(`Lote procesado: ${data.total} solicitudes.`);
       await loadRequests();
-    } catch (error) {
+    } catch {
       setFeedback('Error al procesar lote', true);
     }
   });
@@ -156,7 +305,7 @@
   document.getElementById('rollbackBatch')?.addEventListener('click', async () => {
     const batchId = (document.getElementById('rollbackBatchId') as HTMLInputElement | null)?.value || '';
     if (!batchId) {
-      setFeedback('Ingresa un batchId para revertir.', true);
+      setFeedback('Ingresa un ID de lote para revertir.', true);
       return;
     }
     setFeedback('Aplicando rollback...');
@@ -164,7 +313,7 @@
       const response = await fetch('/api/requests/rollback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ batchId })
+        body: JSON.stringify({ batchId }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -173,7 +322,7 @@
       }
       setFeedback(`Rollback aplicado en ${data.total} solicitudes.`);
       await loadRequests();
-    } catch (error) {
+    } catch {
       setFeedback('Error al aplicar rollback', true);
     }
   });

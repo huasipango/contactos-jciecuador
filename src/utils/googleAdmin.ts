@@ -215,15 +215,19 @@ export async function getOrganizationalUnits(accessToken: string) {
 
   try {
     const response = await admin.orgunits.list({
-      customerId: 'my_customer'
+      customerId: 'my_customer',
+      type: 'all',
     });
 
-    return response.data.organizationUnits
-      ?.filter((unit) => unit.parentOrgUnitPath?.startsWith('/JCI Ecuador') || unit.orgUnitPath?.startsWith('/JCI Ecuador'))
+    const raw = response.data.organizationUnits || [];
+
+    return raw
       .map((unit) => ({
         name: unit.name || '',
-        path: unit.orgUnitPath || ''
-      })) || [];
+        path: unit.orgUnitPath || '',
+        parentPath: unit.parentOrgUnitPath || '',
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     const message = getGoogleErrorMessage(error, 'Error al consultar unidades organizativas');
     console.error(message);

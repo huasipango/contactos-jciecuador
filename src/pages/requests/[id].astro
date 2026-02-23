@@ -21,6 +21,10 @@ if (!user) {
   return Astro.redirect(authUrl);
 }
 
+if (user.role === 'miembro') {
+  return Astro.redirect('/?error=acceso_denegado');
+}
+
 const requestId = Astro.params.id || '';
 const request = await getRequestById(requestId);
 if (!request) {

@@ -7,11 +7,14 @@ import { sendRequestSummaryEmail } from '../../../utils/notifications';
 export const GET: APIRoute = async (context) => {
   const user = await getSessionUser(context);
   if (!user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+  if (user.role === 'miembro') {
+    return new Response(JSON.stringify({ error: 'No autorizado para este módulo' }), { status: 403 });
+  }
 
   const request = await getRequestById(context.params.id || '');
   if (!request) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });
 
-  if ((user.role === 'presidente_local' || user.role === 'miembro') && request.requestorEmail !== user.email) {
+  if (user.role === 'presidente_local' && request.requestorEmail !== user.email) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
   return new Response(JSON.stringify({ request }), {
@@ -23,6 +26,9 @@ export const GET: APIRoute = async (context) => {
 export const PATCH: APIRoute = async (context) => {
   const user = await getSessionUser(context);
   if (!user) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+  if (user.role === 'miembro') {
+    return new Response(JSON.stringify({ error: 'No autorizado para este módulo' }), { status: 403 });
+  }
 
   const id = context.params.id || '';
   const body = await context.request.json().catch(() => null);
@@ -48,8 +54,8 @@ export const PATCH: APIRoute = async (context) => {
   }
 
   if (body.action === 'approve') {
-    if (!requireRole(user.role, ['funcionario_nacional'])) {
-      return new Response(JSON.stringify({ error: 'No autorizado para aprobar' }), { status: 403 });
+    if (!requireRole(user.role, ['administrador'])) {
+      return new Response(JSON.stringify({ error: 'Solo administradores pueden aprobar' }), { status: 403 });
     }
     const updated = await approveRequest(id, user.email);
     if (!updated) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });
@@ -61,8 +67,8 @@ export const PATCH: APIRoute = async (context) => {
   }
 
   if (body.action === 'reject') {
-    if (!requireRole(user.role, ['funcionario_nacional'])) {
-      return new Response(JSON.stringify({ error: 'No autorizado para rechazar' }), { status: 403 });
+    if (!requireRole(user.role, ['administrador'])) {
+      return new Response(JSON.stringify({ error: 'Solo administradores pueden rechazar' }), { status: 403 });
     }
     const updated = await rejectRequest(id, user.email, body.reason || 'Sin detalle');
     if (!updated) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });

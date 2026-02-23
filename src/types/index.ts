@@ -18,6 +18,7 @@ export interface User {
 export interface OrganizationalUnit {
   name: string;
   path: string;
+  parentPath: string;
 }
 
 export type UserRole = 'miembro' | 'presidente_local' | 'funcionario_nacional' | 'administrador';

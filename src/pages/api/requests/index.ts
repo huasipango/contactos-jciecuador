@@ -11,9 +11,12 @@ export const GET: APIRoute = async (context) => {
   if (!user) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
   }
+  if (user.role === 'miembro') {
+    return new Response(JSON.stringify({ error: 'No autorizado para este módulo' }), { status: 403 });
+  }
 
   const requests = await listRequests();
-  const visible = (user.role === 'presidente_local' || user.role === 'miembro')
+  const visible = user.role === 'presidente_local'
     ? requests.filter((item) => item.requestorEmail === user.email)
     : requests;
 
@@ -27,6 +30,9 @@ export const POST: APIRoute = async (context) => {
   const user = await getSessionUser(context);
   if (!user) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+  }
+  if (user.role === 'miembro') {
+    return new Response(JSON.stringify({ error: 'No autorizado para crear solicitudes' }), { status: 403 });
   }
 
   const body = await context.request.json().catch(() => null);

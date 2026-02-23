@@ -1,54 +1,93 @@
-<div class="bg-card text-card-foreground rounded-lg border border-border p-4">
-  <h2 class="text-lg font-semibold mb-4 text-foreground">Nueva solicitud</h2>
-  <form id="requestForm" class="grid md:grid-cols-2 gap-3">
+---
+interface Props {
+  orgUnits: Array<{ name: string; path: string }>;
+}
+
+const { orgUnits } = Astro.props;
+---
+
+<div class="bg-card text-card-foreground rounded-lg border border-border p-5">
+  <h2 class="text-lg font-semibold mb-1 text-foreground">Nueva solicitud</h2>
+  <p class="text-sm text-muted-foreground mb-4">Completa los campos requeridos según el tipo de gestión.</p>
+
+  <form id="requestForm" class="space-y-4" novalidate>
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Tipo -->
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Tipo de solicitud <span class="text-destructive">*</span></span>
+        <select id="reqType" required class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors">
+          <option value="">— Selecciona —</option>
+          <option value="create_account">Nueva cuenta</option>
+          <option value="update_phone">Actualizar teléfono</option>
+          <option value="reset_password">Recuperar contraseña</option>
+          <option value="delete_account">Eliminar cuenta</option>
+        </select>
+        <p class="text-xs text-destructive mt-1 hidden" data-error="reqType">Selecciona un tipo de solicitud.</p>
+      </label>
+
+      <!-- Unidad Organizativa -->
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Organización Local <span class="text-destructive">*</span></span>
+        <select id="ou" required class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors">
+          <option value="">— Selecciona —</option>
+          {orgUnits.map((unit) => (
+            <option value={unit.path}>{unit.name}</option>
+          ))}
+        </select>
+        <p class="text-xs text-destructive mt-1 hidden" data-error="ou">Selecciona una organización local.</p>
+      </label>
+    </div>
+
+    <!-- Correo objetivo (visible según tipo) -->
+    <div id="targetEmailGroup" class="hidden">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Correo de la cuenta <span class="text-destructive">*</span></span>
+        <input id="targetEmail" type="email" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="usuario@jciecuador.com" />
+        <p class="text-xs text-destructive mt-1 hidden" data-error="targetEmail">Ingresa el correo de la cuenta.</p>
+      </label>
+    </div>
+
+    <!-- Nombres y Apellidos (solo para crear cuenta) -->
+    <div id="nameFields" class="hidden grid md:grid-cols-2 gap-4">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Nombres <span class="text-destructive">*</span></span>
+        <input id="givenName" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="Ej: Juan Carlos" />
+        <p class="text-xs text-destructive mt-1 hidden" data-error="givenName">Ingresa los nombres.</p>
+      </label>
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Apellidos <span class="text-destructive">*</span></span>
+        <input id="familyName" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="Ej: Pérez López" />
+        <p class="text-xs text-destructive mt-1 hidden" data-error="familyName">Ingresa los apellidos.</p>
+      </label>
+    </div>
+
+    <!-- Teléfono (para crear cuenta y actualizar teléfono) -->
+    <div id="phoneGroup" class="hidden">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Teléfono celular <span class="text-destructive">*</span></span>
+        <div class="mt-1 flex">
+          <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm font-medium select-none">+593</span>
+          <input id="phone" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" class="w-full h-10 px-3 rounded-r-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="9XXXXXXXX" />
+        </div>
+        <p class="text-xs text-muted-foreground mt-1">Solo los dígitos después de +593 (ej: 987654321)</p>
+        <p class="text-xs text-destructive mt-1 hidden" data-error="phone">Ingresa el número de teléfono.</p>
+      </label>
+    </div>
+
+    <!-- Motivo -->
     <label class="block text-sm">
-      <span class="text-foreground">Tipo</span>
-      <select id="reqType" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors">
-        <option value="create_account">Nueva cuenta</option>
-        <option value="update_phone">Actualizar teléfono</option>
-        <option value="reset_password">Recuperar contraseña</option>
-        <option value="delete_account">Eliminar cuenta</option>
-      </select>
+      <span class="text-foreground font-medium">Motivo <span class="text-destructive">*</span></span>
+      <textarea id="reason" rows="2" required class="mt-1 w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors resize-y" placeholder="Describe brevemente el motivo de la solicitud..."></textarea>
+      <p class="text-xs text-destructive mt-1 hidden" data-error="reason">Ingresa el motivo de la solicitud.</p>
     </label>
 
-    <label class="block text-sm">
-      <span class="text-foreground">Unidad organizativa</span>
-      <input id="ou" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="/JCI Ecuador/..." />
-    </label>
-
-    <label class="block text-sm">
-      <span class="text-foreground">Correo objetivo</span>
-      <input id="targetEmail" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="usuario@jciecuador.com" />
-    </label>
-
-    <label class="block text-sm">
-      <span class="text-foreground">Teléfono</span>
-      <input id="phone" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="+593..." />
-    </label>
-
-    <label class="block text-sm">
-      <span class="text-foreground">Nombres</span>
-      <input id="givenName" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="Dos nombres" />
-    </label>
-
-    <label class="block text-sm">
-      <span class="text-foreground">Apellidos</span>
-      <input id="familyName" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="Dos apellidos" />
-    </label>
-
-    <label class="md:col-span-2 block text-sm">
-      <span class="text-foreground">Motivo</span>
-      <textarea id="reason" rows="3" class="mt-1 w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors resize-y"></textarea>
-    </label>
-
-    <label class="md:col-span-2 inline-flex items-center gap-2 text-sm text-foreground">
-      <input id="dryRun" type="checkbox" class="w-4 h-4 rounded-sm border border-input accent-primary" />
-      Simular (dry run)
-    </label>
-
-    <div class="md:col-span-2 flex gap-2">
-      <button type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">Guardar solicitud</button>
-      <button type="button" id="clearForm" class="inline-flex items-center justify-center h-10 px-6 rounded-md border border-input bg-background text-foreground font-medium text-sm hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">Limpiar</button>
+    <div class="flex gap-2 pt-1">
+      <button type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        Enviar solicitud
+      </button>
+      <button type="button" id="clearForm" class="inline-flex items-center justify-center h-10 px-6 rounded-md border border-input bg-background text-foreground font-medium text-sm hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        Limpiar
+      </button>
     </div>
   </form>
   <p id="requestFormFeedback" class="mt-3 text-sm"></p>
@@ -58,6 +97,58 @@
   const form = document.getElementById('requestForm') as HTMLFormElement | null;
   const feedback = document.getElementById('requestFormFeedback') as HTMLParagraphElement | null;
   const clearButton = document.getElementById('clearForm') as HTMLButtonElement | null;
+  const reqType = document.getElementById('reqType') as HTMLSelectElement;
+  const targetEmailGroup = document.getElementById('targetEmailGroup') as HTMLDivElement;
+  const nameFields = document.getElementById('nameFields') as HTMLDivElement;
+  const phoneGroup = document.getElementById('phoneGroup') as HTMLDivElement;
+
+  const FIELDS_BY_TYPE: Record<string, string[]> = {
+    create_account: ['ou', 'givenName', 'familyName', 'phone', 'reason'],
+    update_phone: ['ou', 'targetEmail', 'phone', 'reason'],
+    reset_password: ['ou', 'targetEmail', 'reason'],
+    delete_account: ['ou', 'targetEmail', 'reason'],
+  };
+
+  function updateVisibility() {
+    const type = reqType.value;
+    const needsTarget = ['update_phone', 'reset_password', 'delete_account'].includes(type);
+    const needsName = type === 'create_account';
+    const needsPhone = ['create_account', 'update_phone'].includes(type);
+
+    targetEmailGroup.classList.toggle('hidden', !needsTarget);
+    nameFields.classList.toggle('hidden', !needsName);
+    phoneGroup.classList.toggle('hidden', !needsPhone);
+  }
+
+  reqType.addEventListener('change', updateVisibility);
+  updateVisibility();
+
+  function showError(fieldId: string) {
+    const el = document.querySelector(`[data-error="${fieldId}"]`) as HTMLElement | null;
+    el?.classList.remove('hidden');
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('[data-error]').forEach((el) => el.classList.add('hidden'));
+  }
+
+  function validate(): boolean {
+    clearErrors();
+    const type = reqType.value;
+    if (!type) { showError('reqType'); return false; }
+
+    const required = FIELDS_BY_TYPE[type] || [];
+    let valid = true;
+
+    for (const id of required) {
+      const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+      if (!el || !el.value.trim()) {
+        showError(id);
+        valid = false;
+      }
+    }
+    return valid;
+  }
 
   function setFeedback(message: string, isError = false) {
     if (!feedback) return;
@@ -65,41 +156,50 @@
     feedback.className = `mt-3 text-sm ${isError ? 'text-destructive' : 'text-accent'}`;
   }
 
+  function getVal(id: string): string {
+    return (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null)?.value?.trim() || '';
+  }
+
   function clearAll() {
-    (document.getElementById('reqType') as HTMLSelectElement).value = 'create_account';
-    (document.getElementById('ou') as HTMLInputElement).value = '';
-    (document.getElementById('targetEmail') as HTMLInputElement).value = '';
-    (document.getElementById('phone') as HTMLInputElement).value = '';
-    (document.getElementById('givenName') as HTMLInputElement).value = '';
-    (document.getElementById('familyName') as HTMLInputElement).value = '';
-    (document.getElementById('reason') as HTMLTextAreaElement).value = '';
-    (document.getElementById('dryRun') as HTMLInputElement).checked = false;
+    reqType.value = '';
+    ['ou', 'targetEmail', 'phone', 'givenName', 'familyName', 'reason'].forEach((id) => {
+      const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+      if (el) el.value = '';
+    });
+    clearErrors();
+    updateVisibility();
+    if (feedback) feedback.textContent = '';
   }
 
   clearButton?.addEventListener('click', clearAll);
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!validate()) return;
+
     setFeedback('Guardando solicitud...');
+
+    const phoneRaw = getVal('phone');
+    const fullPhone = phoneRaw ? `0${phoneRaw}` : '';
+
     const payload = {
-      type: (document.getElementById('reqType') as HTMLSelectElement).value,
-      organizationalUnit: (document.getElementById('ou') as HTMLInputElement).value,
-      dryRun: (document.getElementById('dryRun') as HTMLInputElement).checked,
+      type: getVal('reqType'),
+      organizationalUnit: getVal('ou'),
       payload: {
-        targetEmail: (document.getElementById('targetEmail') as HTMLInputElement).value,
-        phone: (document.getElementById('phone') as HTMLInputElement).value,
-        givenName: (document.getElementById('givenName') as HTMLInputElement).value,
-        familyName: (document.getElementById('familyName') as HTMLInputElement).value,
-        orgUnitPath: (document.getElementById('ou') as HTMLInputElement).value,
-        reason: (document.getElementById('reason') as HTMLTextAreaElement).value
-      }
+        targetEmail: getVal('targetEmail'),
+        phone: fullPhone,
+        givenName: getVal('givenName'),
+        familyName: getVal('familyName'),
+        orgUnitPath: getVal('ou'),
+        reason: getVal('reason'),
+      },
     };
 
     try {
       const response = await fetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -109,7 +209,7 @@
       setFeedback('Solicitud creada correctamente.');
       clearAll();
       window.dispatchEvent(new CustomEvent('requests:reload'));
-    } catch (error) {
+    } catch {
       setFeedback('Error al guardar solicitud', true);
     }
   });
