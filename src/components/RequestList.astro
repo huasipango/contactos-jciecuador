@@ -157,6 +157,7 @@ const isPresident = userRole === 'presidente_local';
     executedAt?: string;
     payload: { targetEmail?: string; subjectDisplay?: string; givenName?: string; familyName?: string; phone?: string; reason?: string };
     result?: { createdUser?: string; temporaryPassword?: string };
+    error?: string;
   };
 
   const rows = document.getElementById('requestRows') as HTMLTableSectionElement | null;
@@ -230,6 +231,48 @@ const isPresident = userRole === 'presidente_local';
     return fullName || 'Sin identificar';
   }
 
+  function getFriendlyErrorSummary(req: RequestItem): string {
+    const rawError = (req.error || '').trim();
+    if (!rawError) {
+      return 'No se pudo completar la solicitud por un problema temporal. Pide al administrador reintentar.';
+    }
+
+    const technical = rawError.toLowerCase();
+
+    if (req.type === 'create_account') {
+      if (technical.includes('already exists') || technical.includes('entity already exists')) {
+        return 'La cuenta ya existía en Google Workspace. Un administrador debe verificarla y marcar la solicitud como completada.';
+      }
+      if (technical.includes('2 nombres y 2 apellidos')) {
+        return 'Faltan nombres o apellidos completos para crear la cuenta. Revisa la solicitud y corrige los datos.';
+      }
+      return 'No se pudo crear la cuenta en este intento. Un administrador debe revisar el detalle y volver a ejecutar.';
+    }
+
+    if (req.type === 'update_phone') {
+      return 'No se pudo actualizar el teléfono de recuperación. Verifica el correo objetivo y el número ingresado.';
+    }
+
+    if (req.type === 'reset_password') {
+      return 'No se pudo generar la contraseña temporal. Un administrador debe volver a intentar el restablecimiento.';
+    }
+
+    if (req.type === 'delete_account') {
+      return 'No se pudo eliminar la cuenta. Un administrador debe validar permisos y estado de la cuenta.';
+    }
+
+    return 'No se pudo completar la solicitud. Un administrador debe revisar el error y reintentar.';
+  }
+
+  function escapeHtml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
   function buildCredentialsText(req: RequestItem): string {
     const accountEmail = req.result?.createdUser || req.payload?.targetEmail || 'No disponible';
     const temporaryPassword = resolveTemporaryPassword(req);
@@ -288,12 +331,20 @@ const isPresident = userRole === 'presidente_local';
 
       const statusInfo = STATUS_LABELS[req.status] || { label: req.status, class: 'bg-muted text-muted-foreground' };
 
+      const errorTooltip = req.status === 'error'
+        ? `${getFriendlyErrorSummary(req)}${req.error ? `\\n\\nDetalle técnico: ${req.error}` : ''}`
+        : '';
+      const statusLabel = req.status === 'error' ? `${statusInfo.label} ⓘ` : statusInfo.label;
+      const statusAttrs = req.status === 'error'
+        ? `title="${escapeHtml(errorTooltip)}" aria-label="${escapeHtml(errorTooltip)}"`
+        : '';
+
       let html = `
         <td class="px-3 py-2.5 text-foreground font-medium">${TYPE_LABELS[req.type] || req.type}</td>
         <td class="px-3 py-2.5 text-muted-foreground">${ouName(req.organizationalUnit)}</td>
         <td class="px-3 py-2.5 text-muted-foreground text-xs">${getAccountDisplay(req.payload || {})}</td>
         <td class="px-3 py-2.5">
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}">${statusInfo.label}</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}" ${statusAttrs}>${statusLabel}</span>
         </td>
         <td class="px-3 py-2.5 text-muted-foreground text-xs">${formatDate(req.createdAt)}</td>
       `;
