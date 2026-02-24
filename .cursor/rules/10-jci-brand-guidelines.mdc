@@ -1,0 +1,63 @@
+---
+description: Manual de marca JCI (colores, tipografías, uso de logo y ripple)
+globs:
+  [
+    "src/styles/**",
+    "src/components/**",
+    "src/layouts/**",
+    "public/**",
+    "docs/ui/**",
+  ]
+alwaysApply: true
+---
+
+# JCI Brand System (Fuente de verdad)
+
+**Fuente:** Manual de marca JCI (Brand Guidelines v1.4, Dec 18 2025).:contentReference[oaicite:3]{index=3}:contentReference[oaicite:4]{index=4}
+
+## Colores oficiales (tokens)
+
+Usa SIEMPRE estos hex como base:
+
+- JCI Blue: #0097D7
+- JCI Black: #130F2D
+- JCI White: #FFFFFF
+- JCI Navy: #1F4789
+- JCI Teal: #57BCBC
+- JCI Yellow: #EFC40F
+
+Notas de uso:
+
+- JCI Blue es el color principal y debe usarse de forma prominente.
+- Yellow es un acento (úsalo con moderación).
+- Black/White dan calma y contraste; deja espacio para que el azul destaque.:contentReference[oaicite:5]{index=5}:contentReference[oaicite:6]{index=6}
+
+## Tipografía oficial
+
+- Primary: Plus Jakarta Sans (Google Fonts).
+- Fallback (solo si no hay acceso a Plus Jakarta Sans): Readex Pro.
+- Secundaria (solo para quotes/callouts grandes en editorial): Arvo.:contentReference[oaicite:7]{index=7}:contentReference[oaicite:8]{index=8}
+
+## Logo: reglas que NO se negocian
+
+- Respetar clearspace alrededor del logo.
+- Tamaño mínimo digital: 32px de alto.
+- NO rotar, estirar, recolorear, ni aplicar efectos.:contentReference[oaicite:9]{index=9}:contentReference[oaicite:10]{index=10}
+
+## Logo placement (para Header/Footer)
+
+- Preferido: esquina superior izquierda o derecha.
+- Evita centrar salvo necesidad extrema.:contentReference[oaicite:11]{index=11}:contentReference[oaicite:12]{index=12}
+
+## Ripple (motivo gráfico)
+
+- El ripple es un motivo central de la identidad.
+- Úsalo como background sutil (hero / secciones), NUNCA compitiendo con texto.
+- Si se recrea: círculos concéntricos, cuartos iguales, spacing = ancho del anillo y rotación incremental de 15°.:contentReference[oaicite:13]{index=13}:contentReference[oaicite:14]{index=14}
+
+## Traducción a tokens técnicos (obligatorio)
+
+- No hardcodear colores en componentes (hex, rgb, etc.).
+- Todos los componentes deben consumir tokens semánticos:
+  - background / foreground / primary / secondary / accent / muted / border / ring, etc.
+- Si falta un token, se CREA el token. No se inventan colores sueltos.

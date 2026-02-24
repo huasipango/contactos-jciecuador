@@ -1,0 +1,492 @@
+---
+import type { UserRole } from '../types';
+
+interface Props {
+  userRole: UserRole;
+  orgUnits: Array<{ name: string; path: string }>;
+}
+
+const { userRole, orgUnits } = Astro.props;
+const isAdmin = userRole === 'administrador';
+const isFuncionario = userRole === 'funcionario_nacional';
+const isPresident = userRole === 'presidente_local';
+---
+
+<div class="bg-card text-card-foreground rounded-lg border border-border p-5">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div>
+      <h2 class="text-lg font-semibold text-foreground">
+        {isAdmin ? 'Gestión de solicitudes' : 'Historial de solicitudes'}
+      </h2>
+      <p class="text-sm text-muted-foreground">
+        {isAdmin && 'Puedes aprobar, rechazar y procesar solicitudes.'}
+        {isFuncionario && 'Vista de todas las solicitudes por organización local.'}
+        {userRole === 'presidente_local' && 'Solicitudes que has realizado y su estado actual.'}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button id="refreshRequests" class="inline-flex items-center gap-1.5 justify-center h-9 px-3 text-sm rounded-md border border-input bg-background text-foreground font-medium hover:bg-muted transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+        Actualizar
+      </button>
+      {(isAdmin || isFuncionario) && (
+        <button id="downloadCsv" class="inline-flex items-center gap-1.5 justify-center h-9 px-3 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          Exportar CSV
+        </button>
+      )}
+    </div>
+  </div>
+
+  {/* OU filter for funcionarios and admins */}
+  {(isFuncionario || isAdmin) && (
+    <div class="mb-4">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Filtrar por Organización Local</span>
+        <select id="ouFilter" class="mt-1 w-full md:w-72 h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors">
+          <option value="">Todas las organizaciones</option>
+          {orgUnits.map((unit) => (
+            <option value={unit.path}>{unit.name}</option>
+          ))}
+        </select>
+      </label>
+    </div>
+  )}
+
+  <p id="requestOpsFeedback" class="mb-3 text-sm"></p>
+
+  <div class="overflow-x-auto rounded-lg border border-border">
+    <table class="min-w-full text-sm">
+      <thead class="bg-muted/50">
+        <tr>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Tipo</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Organización</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Cuenta</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Estado</th>
+          <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Fecha</th>
+          {(isAdmin || isFuncionario) && (
+            <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Solicitante</th>
+          )}
+          {(isAdmin || isPresident) && (
+            <th class="px-3 py-2.5 text-left font-medium text-muted-foreground">Acciones</th>
+          )}
+        </tr>
+      </thead>
+      <tbody id="requestRows" class="divide-y divide-border"></tbody>
+    </table>
+  </div>
+
+  <p id="emptyMessage" class="hidden text-center text-sm text-muted-foreground py-8">No hay solicitudes para mostrar.</p>
+
+  <div id="credentialsModal" class="fixed inset-0 z-50 hidden">
+    <div id="credentialsModalBackdrop" class="absolute inset-0 bg-black/50"></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+      <div class="w-full max-w-lg rounded-lg border border-border bg-card text-card-foreground shadow-xl">
+        <div class="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 class="text-base font-semibold text-foreground">Credenciales de acceso</h3>
+          <button id="closeCredentialsModal" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-foreground hover:bg-muted" aria-label="Cerrar">
+            ×
+          </button>
+        </div>
+        <div class="space-y-3 px-4 py-4">
+          <p class="text-sm text-muted-foreground">He cargado las credenciales de la cuenta. Comparte esta información de forma segura con la persona solicitante.</p>
+          <div id="credentialsModalContent" class="space-y-3"></div>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button id="copyCredentialsButton" class="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+              Copiar contenido
+            </button>
+            <button id="closeCredentialsModalSecondary" class="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md border border-input bg-background text-foreground font-medium hover:bg-muted transition-colors">
+              Cerrar
+            </button>
+          </div>
+          <p id="credentialsCopyFeedback" class="text-xs text-muted-foreground"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {isAdmin && (
+    <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+      <span class="text-sm font-medium text-foreground">Administración:</span>
+      <button id="executeBatch" class="inline-flex items-center gap-1.5 justify-center h-9 px-4 text-sm rounded-md bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors">
+        Procesar lote pendiente
+      </button>
+      <div class="flex items-center gap-1">
+        <input id="rollbackBatchId" class="h-9 w-40 px-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="batch-..." />
+        <button id="rollbackBatch" class="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors">
+          Revertir lote
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+
+<script define:vars={{ userRole, isAdmin, isFuncionario, isPresident }}>
+  window.__requestListConfig = { userRole, isAdmin, isFuncionario, isPresident };
+</script>
+
+<script>
+  const cfg = (window as any).__requestListConfig as { userRole: string; isAdmin: boolean; isFuncionario: boolean; isPresident: boolean };
+
+  const TYPE_LABELS: Record<string, string> = {
+    create_account: 'Nueva cuenta',
+    update_phone: 'Actualizar teléfono',
+    reset_password: 'Recuperar contraseña',
+    delete_account: 'Eliminar cuenta',
+  };
+
+  const STATUS_LABELS: Record<string, { label: string; class: string }> = {
+    draft: { label: 'Borrador', class: 'bg-muted text-muted-foreground' },
+    pending: { label: 'Pendiente', class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    approved: { label: 'Aprobada', class: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+    rejected: { label: 'Rechazada', class: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+    executing: { label: 'Ejecutando', class: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
+    executed: { label: 'Ejecutada', class: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+    error: { label: 'Error', class: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+    rolled_back: { label: 'Revertida', class: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300' },
+  };
+
+  type RequestItem = {
+    id: string;
+    type: string;
+    status: string;
+    organizationalUnit: string;
+    requestorEmail: string;
+    createdAt: string;
+    updatedAt: string;
+    executedAt?: string;
+    payload: { targetEmail?: string; subjectDisplay?: string; givenName?: string; familyName?: string; phone?: string; reason?: string };
+    result?: { createdUser?: string; temporaryPassword?: string };
+  };
+
+  const rows = document.getElementById('requestRows') as HTMLTableSectionElement | null;
+  const emptyMsg = document.getElementById('emptyMessage') as HTMLParagraphElement | null;
+  const feedback = document.getElementById('requestOpsFeedback') as HTMLParagraphElement | null;
+  const ouFilter = document.getElementById('ouFilter') as HTMLSelectElement | null;
+  const credentialsModal = document.getElementById('credentialsModal');
+  const credentialsModalBackdrop = document.getElementById('credentialsModalBackdrop');
+  const credentialsModalContent = document.getElementById('credentialsModalContent');
+  const credentialsCopyFeedback = document.getElementById('credentialsCopyFeedback');
+  const closeCredentialsModal = document.getElementById('closeCredentialsModal');
+  const closeCredentialsModalSecondary = document.getElementById('closeCredentialsModalSecondary');
+  const copyCredentialsButton = document.getElementById('copyCredentialsButton');
+
+  let allRequests: RequestItem[] = [];
+  const MAIL_URL = 'https://mail.google.com/a/jciecuador.com';
+  let currentCredentialsText = '';
+
+  function getMonthNameEs(monthIndex: number) {
+    const monthNames = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre'
+    ];
+    return monthNames[monthIndex] || 'Mes';
+  }
+
+  function resolveTemporaryPassword(req: RequestItem) {
+    const value = (req.result?.temporaryPassword || '').trim();
+    if (value && value !== 'Configurada por política mensual') return value;
+    const referenceDate = req.executedAt || req.createdAt;
+    const parsedDate = new Date(referenceDate);
+    if (Number.isNaN(parsedDate.getTime())) return value || 'No disponible en esta solicitud';
+    return `Clave${getMonthNameEs(parsedDate.getMonth())}${parsedDate.getFullYear()}`;
+  }
+
+  function setFeedback(message: string, isError = false) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = `mb-3 text-sm ${isError ? 'text-destructive' : 'text-accent'}`;
+  }
+
+  function formatDate(iso: string): string {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })
+        + ' ' + d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return iso;
+    }
+  }
+
+  function ouName(path: string): string {
+    if (!path) return '—';
+    return path.split('/').filter(Boolean).pop() || path;
+  }
+
+  function getAccountDisplay(payload: RequestItem['payload']): string {
+    if (payload?.subjectDisplay?.trim()) return payload.subjectDisplay.trim();
+    if (payload?.targetEmail?.trim()) return payload.targetEmail.trim();
+    const fullName = `${payload?.givenName || ''} ${payload?.familyName || ''}`.trim();
+    return fullName || 'Sin identificar';
+  }
+
+  function buildCredentialsText(req: RequestItem): string {
+    const accountEmail = req.result?.createdUser || req.payload?.targetEmail || 'No disponible';
+    const temporaryPassword = resolveTemporaryPassword(req);
+    return [
+      'He cargado las credenciales de la cuenta solicitada.',
+      '',
+      `Cuenta: ${accountEmail}`,
+      `CONTRASENA TEMPORAL: ${temporaryPassword}`,
+      '',
+      `Acceso webmail: ${MAIL_URL}`
+    ].join('\n');
+  }
+
+  function openCredentialsModal(req: RequestItem) {
+    currentCredentialsText = buildCredentialsText(req);
+    const accountEmail = req.result?.createdUser || req.payload?.targetEmail || 'No disponible';
+    const temporaryPassword = resolveTemporaryPassword(req);
+    if (credentialsModalContent) {
+      credentialsModalContent.innerHTML = `
+        <div class="rounded-md border border-border bg-muted p-3 text-xs text-foreground">
+          <p class="text-muted-foreground mb-1">Cuenta</p>
+          <p class="font-medium break-all">${accountEmail}</p>
+        </div>
+        <div class="rounded-md border border-primary/40 bg-primary/10 p-3 text-foreground">
+          <p class="text-xs font-semibold tracking-wide text-primary mb-1">CONTRASENA TEMPORAL</p>
+          <p class="text-base font-bold break-all">${temporaryPassword}</p>
+        </div>
+        <div class="rounded-md border border-border bg-muted p-3 text-xs text-foreground">
+          <p class="text-muted-foreground mb-1">Acceso webmail</p>
+          <p class="font-medium break-all">${MAIL_URL}</p>
+        </div>
+      `;
+    }
+    if (credentialsCopyFeedback) credentialsCopyFeedback.textContent = '';
+    credentialsModal?.classList.remove('hidden');
+  }
+
+  function closeModal() {
+    credentialsModal?.classList.add('hidden');
+    if (credentialsCopyFeedback) credentialsCopyFeedback.textContent = '';
+  }
+
+  function renderRequests(requests: RequestItem[]) {
+    if (!rows) return;
+    rows.innerHTML = '';
+
+    if (requests.length === 0) {
+      emptyMsg?.classList.remove('hidden');
+      return;
+    }
+    emptyMsg?.classList.add('hidden');
+
+    for (const req of requests) {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-muted/30 transition-colors';
+
+      const statusInfo = STATUS_LABELS[req.status] || { label: req.status, class: 'bg-muted text-muted-foreground' };
+
+      let html = `
+        <td class="px-3 py-2.5 text-foreground font-medium">${TYPE_LABELS[req.type] || req.type}</td>
+        <td class="px-3 py-2.5 text-muted-foreground">${ouName(req.organizationalUnit)}</td>
+        <td class="px-3 py-2.5 text-muted-foreground text-xs">${getAccountDisplay(req.payload || {})}</td>
+        <td class="px-3 py-2.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}">${statusInfo.label}</span>
+        </td>
+        <td class="px-3 py-2.5 text-muted-foreground text-xs">${formatDate(req.createdAt)}</td>
+      `;
+
+      if (cfg.isAdmin || cfg.isFuncionario) {
+        html += `<td class="px-3 py-2.5 text-muted-foreground text-xs">${req.requestorEmail}</td>`;
+      }
+
+      if (cfg.isAdmin || cfg.isPresident) {
+        html += `<td class="px-3 py-2.5"><div class="flex flex-wrap gap-1" data-actions></div></td>`;
+      }
+
+      tr.innerHTML = html;
+
+      if (cfg.isAdmin || cfg.isPresident) {
+        const actionContainer = tr.querySelector('[data-actions]') as HTMLDivElement | null;
+
+        if (req.status === 'pending') {
+          if (cfg.isAdmin) {
+            actionContainer?.appendChild(makeBtn('Aprobar', 'bg-green-600 text-white hover:bg-green-700', async () => {
+              await patchRequest(req.id, { action: 'approve' });
+              setFeedback('Solicitud aprobada y ejecutada.');
+            }));
+            actionContainer?.appendChild(makeBtn('Rechazar', 'bg-destructive text-destructive-foreground hover:bg-destructive/90', async () => {
+              const reason = prompt('Motivo de rechazo') || 'Sin detalle';
+              await patchRequest(req.id, { action: 'reject', reason });
+              setFeedback('Solicitud rechazada.');
+            }));
+          }
+
+          if (cfg.isPresident) {
+            actionContainer?.appendChild(makeBtn('Editar', 'border border-input bg-background text-foreground hover:bg-muted', async () => {
+              openFormForEdit(req);
+            }));
+            actionContainer?.appendChild(makeBtn('Eliminar', 'bg-destructive text-destructive-foreground hover:bg-destructive/90', async () => {
+              if (!confirm('¿Seguro que deseas eliminar esta solicitud?')) return;
+              await deleteRequest(req.id);
+              setFeedback('Solicitud eliminada.');
+            }));
+          }
+        }
+
+        if (req.status === 'executed' && (cfg.isAdmin || cfg.isPresident)) {
+          actionContainer?.appendChild(makeBtn('Mostrar credenciales', 'bg-primary text-primary-foreground hover:bg-primary/90', async () => {
+            openCredentialsModal(req);
+          }));
+        }
+      }
+
+      rows.appendChild(tr);
+    }
+  }
+
+  function makeBtn(label: string, classes: string, handler: () => Promise<void>) {
+    const button = document.createElement('button');
+    button.textContent = label;
+    button.className = `inline-flex items-center justify-center px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${classes}`;
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      button.textContent = '...';
+      try {
+        await handler();
+        await loadRequests();
+      } catch (e: any) {
+        setFeedback(e.message || 'Error', true);
+      }
+      button.disabled = false;
+    });
+    return button;
+  }
+
+  async function patchRequest(id: string, payload: Record<string, unknown>) {
+    const response = await fetch(`/api/requests/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'No se pudo actualizar');
+    return data;
+  }
+
+  async function deleteRequest(id: string) {
+    const response = await fetch(`/api/requests/${id}`, {
+      method: 'DELETE',
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'No se pudo eliminar');
+    return data;
+  }
+
+  function openFormForEdit(req: RequestItem) {
+    window.dispatchEvent(new CustomEvent('requests:edit', { detail: req }));
+    setFeedback('Solicitud cargada en el formulario para edición.');
+  }
+
+  function applyFilter() {
+    const filterValue = ouFilter?.value || '';
+    const filtered = filterValue
+      ? allRequests.filter((r) => r.organizationalUnit === filterValue)
+      : allRequests;
+    renderRequests(filtered);
+  }
+
+  async function loadRequests() {
+    if (!rows) return;
+    try {
+      const response = await fetch('/api/requests');
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudieron cargar las solicitudes', true);
+        return;
+      }
+      allRequests = (data.requests || []).sort(
+        (a: RequestItem, b: RequestItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      applyFilter();
+    } catch {
+      setFeedback('Error al cargar solicitudes', true);
+    }
+  }
+
+  ouFilter?.addEventListener('change', applyFilter);
+  document.getElementById('refreshRequests')?.addEventListener('click', loadRequests);
+  document.getElementById('downloadCsv')?.addEventListener('click', () => {
+    window.location.href = '/api/requests/export.csv';
+  });
+
+  document.getElementById('executeBatch')?.addEventListener('click', async () => {
+    if (!confirm('¿Procesar todas las solicitudes pendientes?')) return;
+    setFeedback('Procesando lote...');
+    try {
+      const response = await fetch('/api/requests/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudo procesar el lote', true);
+        return;
+      }
+      setFeedback(`Lote procesado: ${data.total} solicitudes.`);
+      await loadRequests();
+    } catch {
+      setFeedback('Error al procesar lote', true);
+    }
+  });
+
+  document.getElementById('rollbackBatch')?.addEventListener('click', async () => {
+    const batchId = (document.getElementById('rollbackBatchId') as HTMLInputElement | null)?.value || '';
+    if (!batchId) {
+      setFeedback('Ingresa un ID de lote para revertir.', true);
+      return;
+    }
+    setFeedback('Aplicando rollback...');
+    try {
+      const response = await fetch('/api/requests/rollback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batchId }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudo revertir el lote', true);
+        return;
+      }
+      setFeedback(`Rollback aplicado en ${data.total} solicitudes.`);
+      await loadRequests();
+    } catch {
+      setFeedback('Error al aplicar rollback', true);
+    }
+  });
+
+  credentialsModalBackdrop?.addEventListener('click', closeModal);
+  closeCredentialsModal?.addEventListener('click', closeModal);
+  closeCredentialsModalSecondary?.addEventListener('click', closeModal);
+  copyCredentialsButton?.addEventListener('click', async () => {
+    if (!currentCredentialsText) return;
+    try {
+      await navigator.clipboard.writeText(currentCredentialsText);
+      if (credentialsCopyFeedback) {
+        credentialsCopyFeedback.textContent = 'Contenido copiado al portapapeles.';
+        credentialsCopyFeedback.className = 'text-xs text-accent';
+      }
+    } catch {
+      if (credentialsCopyFeedback) {
+        credentialsCopyFeedback.textContent = 'No se pudo copiar. Intenta manualmente.';
+        credentialsCopyFeedback.className = 'text-xs text-destructive';
+      }
+    }
+  });
+
+  window.addEventListener('requests:reload', loadRequests);
+  loadRequests();
+</script>

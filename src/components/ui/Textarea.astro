@@ -1,0 +1,13 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<'textarea'> {}
+
+const { class: className, ...rest } = Astro.props;
+
+const base = 'w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors resize-y';
+
+const classes = [base, className].filter(Boolean).join(' ');
+---
+
+<textarea class={classes} {...rest}><slot /></textarea>

@@ -1,0 +1,51 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/ui/Card.astro';
+import { getSessionUser } from '../../utils/auth';
+import { getRequestById } from '../../utils/requestStore';
+import { getAuthUrl, generateOauthState } from '../../utils/googleAdmin';
+
+export const prerender = false;
+
+const user = await getSessionUser(Astro);
+if (!user) {
+  const state = generateOauthState();
+  Astro.cookies.set('oauth_state', state, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600
+  });
+  const authUrl = await getAuthUrl(state);
+  return Astro.redirect(authUrl);
+}
+
+if (user.role === 'miembro') {
+  return Astro.redirect('/?error=acceso_denegado');
+}
+
+const requestId = Astro.params.id || '';
+const request = await getRequestById(requestId);
+if (!request) {
+  return Astro.redirect('/requests');
+}
+---
+
+<Layout title={`Solicitud ${request.id}`} user={user}>
+  <main class="container mx-auto px-4 py-8">
+    <a href="/requests" class="text-primary hover:underline">← Volver</a>
+    <Card class="mt-4 p-4">
+      <h1 class="text-xl font-semibold text-foreground">Detalle de solicitud</h1>
+      <dl class="grid md:grid-cols-2 gap-3 mt-3">
+        <div><dt class="text-xs text-muted-foreground">ID</dt><dd class="text-foreground">{request.id}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">Tipo</dt><dd class="text-foreground">{request.type}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">Estado</dt><dd class="text-foreground">{request.status}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">OOLL</dt><dd class="text-foreground">{request.organizationalUnit}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">Solicitante</dt><dd class="text-foreground">{request.requestorEmail}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">Creada</dt><dd class="text-foreground">{request.createdAt}</dd></div>
+      </dl>
+      <pre class="mt-4 text-xs bg-muted rounded-lg p-3 overflow-auto text-foreground">{JSON.stringify(request, null, 2)}</pre>
+    </Card>
+  </main>
+</Layout>

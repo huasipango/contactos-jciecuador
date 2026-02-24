@@ -1,0 +1,37 @@
+---
+description: Layout persistente en Astro (Header/Footer) sin duplicación
+globs: ["src/layouts/**", "src/pages/**", "src/components/layout/**"]
+alwaysApply: true
+---
+
+# Layout persistente (Astro SSR)
+
+## Objetivo
+
+- Implementar un layout base con Header + Footer persistentes entre páginas.
+- Evitar duplicación de markup por página.
+- Mantener SSR compatible con Netlify.
+
+## Estructura esperada
+
+- `src/layouts/AppLayout.astro`
+- `src/components/layout/Header.astro`
+- `src/components/layout/Footer.astro`
+
+## Reglas de implementación
+
+- `AppLayout.astro` debe incluir `<slot />` para renderizar el contenido por página.
+- Header debe incluir navegación principal (Directorio, Solicitudes, Créditos) y espacio para switch de tema.
+- Footer debe incluir enlaces y redes (si aplica), sin lógica compleja.
+
+## No negociable
+
+- No mover lógica de auth a UI.
+- No hacer fetches pesados en Header/Footer que afecten performance SSR.
+- No romper rutas existentes.
+
+## Checklist rápido
+
+- 2 páginas reales migradas a AppLayout (mínimo).
+- Build pasa (`npm run build`).
+- Navegación funciona.

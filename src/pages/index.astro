@@ -1,7 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import UsersTable from '../components/UsersTable.astro';
-import { getUsers, getOrganizationalUnits, getAuthUrl } from '../utils/googleAdmin';
+import Alert from '../components/ui/Alert.astro';
+import { getUsers, getOrganizationalUnits, getAuthUrl, generateOauthState } from '../utils/googleAdmin';
+import { getSessionUser } from '../utils/auth';
 
 export const prerender = false;
 
@@ -11,9 +13,20 @@ let orgUnits: any[] = [];
 let error = null;
 
 if (!accessToken) {
-  const authUrl = await getAuthUrl();
+  const state = generateOauthState();
+  Astro.cookies.set('oauth_state', state, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600
+  });
+  const authUrl = await getAuthUrl(state);
   return Astro.redirect(authUrl);
 }
+
+const user = await getSessionUser(Astro);
+const accessDenied = Astro.url.searchParams.get('error') === 'acceso_denegado';
 
 try {
   [users, orgUnits] = await Promise.all([
@@ -23,119 +36,47 @@ try {
 } catch (e: any) {
   if (e.message?.includes('invalid_token') || e.message?.includes('Invalid Credentials')) {
     Astro.cookies.delete('access_token');
-    const authUrl = await getAuthUrl();
+    const state = generateOauthState();
+    Astro.cookies.set('oauth_state', state, {
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 600
+    });
+    const authUrl = await getAuthUrl(state);
     return Astro.redirect(authUrl);
   }
   error = e.message;
 }
 ---
 
-<Layout title="Directorio JCI Ecuador">
-  <main class="min-h-screen bg-transparent">
-    {/* Header con logos */}
+<Layout title="Directorio JCI Ecuador" user={user}>
+  <main>
     <div class="container mx-auto px-4 py-8">
-      <div class="flex justify-between items-center mb-8 relative">
-        <img 
-          src="/logo-color-jci.png" 
-          alt="JCI Ecuador Logo" 
-          class="h-24 dark:hidden z-10"
-        />
-        <img 
-          src="/logo-blanco-jci.png" 
-          alt="JCI Ecuador Logo" 
-          class="h-24 hidden dark:block z-10"
-        />
-        
-        {/* Diseño horizontal en el centro */}
-        <div class="absolute left-0 right-0 hidden md:block" style="top: 50%; transform: translateY(-50%);">
-          <img 
-            src="/diseno-horizontal.png" 
-            alt="Diseño JCI Ecuador" 
-            class="w-full h-20 object-contain"
-          />
-        </div>
-
-        <img 
-          src="/somos-li-color.png" 
-          alt="Somos LI" 
-          class="h-20 dark:hidden z-10"
-        />
-        <img 
-          src="/somos-li-blanco.png" 
-          alt="Somos LI" 
-          class="h-20 hidden dark:block z-10"
-        />
-      </div>
-
-      <h1 class="text-3xl font-bold text-center mb-4 dark:text-white">
+      <h1 class="text-3xl font-bold text-center mb-6 text-foreground">
         Directorio Nacional JCI Ecuador
       </h1>
 
-      <div class="grid md:grid-cols-2 gap-4 mb-8 max-w-6xl mx-auto">
-        {/* Primera caja - Información de búsqueda */}
-        <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
-          <p class="text-blue-800 dark:text-blue-100 text-sm">
-            Esta aplicación muestra el directorio de contactos de los miembros de JCI Ecuador. 
-            Para copiar una dirección de correo electrónico, puede:
-            <ul class="list-disc ml-6 mt-2 text-blue-800 dark:text-blue-100">
-              <li>Hacer clic en cualquier parte de la fila del usuario</li>
-              <li>O usar el botón "COPIAR CORREO" al final de cada fila</li>
-            </ul>
-            <span class="text-blue-800 dark:text-blue-100">
-              Use el buscador para filtrar por nombre o correo electrónico.
-            </span>
-          </p>
+      {accessDenied && (
+        <div class="max-w-6xl mx-auto mb-6">
+          <Alert variant="error">
+            <p class="text-sm text-foreground">
+              <strong>Acceso denegado.</strong> Tu rol actual (<span class="font-semibold">{user?.roleLabel}</span>) no tiene permisos para acceder al módulo de solicitudes.
+            </p>
+          </Alert>
         </div>
-
-        {/* Segunda caja - Solicitud de correo */}
-        <div class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
-          <div class="flex flex-col h-full justify-between">
-            <div>
-              <p class="text-yellow-800 dark:text-yellow-100 mb-2">
-                <span class="font-bold">¿Quieres solicitar agregar o eliminar un correo?</span>
-              </p>
-              <p class="text-yellow-700 dark:text-yellow-200 text-sm">
-                Los Presidentes Locales pueden solicitar cambios en las direcciones de correo electrónico utilizando exclusivamente el correo oficial de su Organización Local (ejemplo: ambato@jciecuador.com).
-              </p>
-            </div>
-            <div class="mt-4 text-right">
-              <a 
-                href="https://forms.gle/y7x3CKXZsqaE2Pgp9"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md transition-colors"
-              >
-                Solicitar correo
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {error ? (
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+        <Alert variant="error">
           <strong class="font-bold">Error:</strong>
           <span class="block sm:inline">{error}</span>
-        </div>
+        </Alert>
       ) : (
         <UsersTable users={users} orgUnits={orgUnits} />
       )}
     </div>
-
-    {/* Diseño horizontal antes del footer */}
-    <div class="w-full mt-12">
-      <img 
-        src="/diseno-horizontal.png" 
-        alt="Diseño JCI Ecuador" 
-        class="w-full object-cover h-24"
-      />
-    </div>
   </main>
 </Layout>
 
-<style>
-  /* Removemos estos estilos ya que ahora están en Layout.astro */
-  :global(.dark) main {
-    background: transparent;
-  }
-</style> 

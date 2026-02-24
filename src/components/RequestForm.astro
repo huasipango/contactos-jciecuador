@@ -1,0 +1,285 @@
+---
+interface Props {
+  orgUnits: Array<{ name: string; path: string }>;
+  userRole?: string;
+  lockedOrgUnitPath?: string;
+  lockedOrgUnitName?: string;
+}
+
+const { orgUnits, userRole = '', lockedOrgUnitPath = '', lockedOrgUnitName = '' } = Astro.props;
+const isPresidentLocal = userRole === 'presidente_local';
+const hasLockedOrg = isPresidentLocal && Boolean(lockedOrgUnitPath);
+---
+
+<div class="bg-card text-card-foreground rounded-lg border border-border p-5">
+  <h2 class="text-lg font-semibold mb-1 text-foreground">Nueva solicitud</h2>
+  <p class="text-sm text-muted-foreground mb-4">Completa los campos requeridos según el tipo de gestión.</p>
+
+  <form id="requestForm" class="space-y-4" novalidate>
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Tipo -->
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Tipo de solicitud <span class="text-destructive">*</span></span>
+        <select id="reqType" required class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors">
+          <option value="">— Selecciona —</option>
+          <option value="create_account">Nueva cuenta</option>
+          <option value="update_phone">Actualizar teléfono</option>
+          <option value="reset_password">Recuperar contraseña</option>
+          <option value="delete_account">Eliminar cuenta</option>
+        </select>
+        <p class="text-xs text-destructive mt-1 hidden" data-error="reqType">Selecciona un tipo de solicitud.</p>
+      </label>
+
+      <!-- Unidad Organizativa -->
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Organización Local <span class="text-destructive">*</span></span>
+        <select
+          id="ou"
+          required
+          disabled={hasLockedOrg}
+          class:list={[
+            'mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors',
+            hasLockedOrg && 'cursor-not-allowed bg-muted text-muted-foreground'
+          ]}
+        >
+          <option value="">— Selecciona —</option>
+          {hasLockedOrg && <option value={lockedOrgUnitPath} selected>{lockedOrgUnitName || lockedOrgUnitPath}</option>}
+          {orgUnits.map((unit) => (
+            <option value={unit.path} selected={unit.path === lockedOrgUnitPath && !hasLockedOrg}>{unit.name}</option>
+          ))}
+        </select>
+        {hasLockedOrg && <p class="text-xs text-muted-foreground mt-1">Tu organización local está asignada por tu perfil.</p>}
+        <p class="text-xs text-destructive mt-1 hidden" data-error="ou">Selecciona una organización local.</p>
+      </label>
+    </div>
+
+    <!-- Correo objetivo (visible según tipo) -->
+    <div id="targetEmailGroup" class="hidden">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Correo de la cuenta <span class="text-destructive">*</span></span>
+        <input id="targetEmail" type="email" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="usuario@jciecuador.com" />
+        <p class="text-xs text-destructive mt-1 hidden" data-error="targetEmail">Ingresa el correo de la cuenta.</p>
+      </label>
+    </div>
+
+    <!-- Nombres y Apellidos (solo para crear cuenta) -->
+    <div id="nameFields" class="hidden grid md:grid-cols-2 gap-4">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Nombres <span class="text-destructive">*</span></span>
+        <input id="givenName" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="Ej: Juan Carlos" />
+        <p class="text-xs text-destructive mt-1 hidden" data-error="givenName">Ingresa los nombres.</p>
+      </label>
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Apellidos <span class="text-destructive">*</span></span>
+        <input id="familyName" class="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="Ej: Pérez López" />
+        <p class="text-xs text-destructive mt-1 hidden" data-error="familyName">Ingresa los apellidos.</p>
+      </label>
+    </div>
+
+    <!-- Teléfono (para crear cuenta y actualizar teléfono) -->
+    <div id="phoneGroup" class="hidden">
+      <label class="block text-sm">
+        <span class="text-foreground font-medium">Teléfono celular <span class="text-destructive">*</span></span>
+        <div class="mt-1 flex">
+          <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm font-medium select-none">+593</span>
+          <input id="phone" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" class="w-full h-10 px-3 rounded-r-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors" placeholder="9XXXXXXXX" />
+        </div>
+        <p class="text-xs text-muted-foreground mt-1">Solo los dígitos después de +593 (ej: 987654321)</p>
+        <p class="text-xs text-destructive mt-1 hidden" data-error="phone">Ingresa el número de teléfono.</p>
+      </label>
+    </div>
+
+    <!-- Motivo -->
+    <label class="block text-sm">
+      <span class="text-foreground font-medium">Motivo <span class="text-destructive">*</span></span>
+      <textarea id="reason" rows="2" required class="mt-1 w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:outline-offset-0 transition-colors resize-y" placeholder="Describe brevemente el motivo de la solicitud..."></textarea>
+      <p class="text-xs text-destructive mt-1 hidden" data-error="reason">Ingresa el motivo de la solicitud.</p>
+    </label>
+
+    <div class="flex gap-2 pt-1">
+      <button id="submitRequestButton" type="submit" class="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        Enviar solicitud
+      </button>
+      <button type="button" id="clearForm" class="inline-flex items-center justify-center h-10 px-6 rounded-md border border-input bg-background text-foreground font-medium text-sm hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        Limpiar
+      </button>
+    </div>
+  </form>
+  <p id="requestFormFeedback" class="mt-3 text-sm"></p>
+</div>
+
+<script define:vars={{ hasLockedOrg, lockedOrgUnitPath }}>
+  const form = document.getElementById('requestForm');
+  const feedback = document.getElementById('requestFormFeedback');
+  const clearButton = document.getElementById('clearForm');
+  const submitButton = document.getElementById('submitRequestButton');
+  const reqType = document.getElementById('reqType');
+  const targetEmailGroup = document.getElementById('targetEmailGroup');
+  const nameFields = document.getElementById('nameFields');
+  const phoneGroup = document.getElementById('phoneGroup');
+  let editingRequestId = '';
+
+  const FIELDS_BY_TYPE = {
+    create_account: ['ou', 'givenName', 'familyName', 'phone', 'reason'],
+    update_phone: ['ou', 'targetEmail', 'phone', 'reason'],
+    reset_password: ['ou', 'targetEmail', 'reason'],
+    delete_account: ['ou', 'targetEmail', 'reason'],
+  };
+
+  function updateVisibility() {
+    const type = reqType.value;
+    const needsTarget = ['update_phone', 'reset_password', 'delete_account'].includes(type);
+    const needsName = type === 'create_account';
+    const needsPhone = ['create_account', 'update_phone'].includes(type);
+
+    targetEmailGroup.classList.toggle('hidden', !needsTarget);
+    nameFields.classList.toggle('hidden', !needsName);
+    phoneGroup.classList.toggle('hidden', !needsPhone);
+  }
+
+  reqType.addEventListener('change', updateVisibility);
+  updateVisibility();
+
+  function showError(fieldId) {
+    const el = document.querySelector(`[data-error="${fieldId}"]`);
+    el?.classList.remove('hidden');
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('[data-error]').forEach((el) => el.classList.add('hidden'));
+  }
+
+  function validate() {
+    clearErrors();
+    const type = reqType.value;
+    if (!type) { showError('reqType'); return false; }
+
+    const required = FIELDS_BY_TYPE[type] || [];
+    let valid = true;
+
+    for (const id of required) {
+      const el = document.getElementById(id);
+      if (!el || !el.value.trim()) {
+        showError(id);
+        valid = false;
+      }
+    }
+    return valid;
+  }
+
+  function setFeedback(message, isError = false) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = `mt-3 text-sm ${isError ? 'text-destructive' : 'text-accent'}`;
+  }
+
+  function getVal(id) {
+    return document.getElementById(id)?.value?.trim() || '';
+  }
+
+  function clearAll() {
+    editingRequestId = '';
+    if (submitButton) submitButton.textContent = 'Enviar solicitud';
+    reqType.value = '';
+    ['targetEmail', 'phone', 'givenName', 'familyName', 'reason'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const ou = document.getElementById('ou');
+    if (ou) {
+      ou.value = hasLockedOrg ? lockedOrgUnitPath : '';
+    }
+    clearErrors();
+    updateVisibility();
+    if (feedback) feedback.textContent = '';
+  }
+
+  function normalizePhoneForInput(phone) {
+    const digits = (phone || '').replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('593')) return digits.slice(3);
+    if (digits.startsWith('0')) return digits.slice(1);
+    return digits;
+  }
+
+  function loadRequestIntoForm(req) {
+    editingRequestId = req.id || '';
+    if (submitButton) submitButton.textContent = 'Actualizar solicitud';
+
+    reqType.value = req.type || '';
+    updateVisibility();
+
+    const ou = document.getElementById('ou');
+    if (ou && !hasLockedOrg) {
+      ou.value = req.organizationalUnit || req.payload?.orgUnitPath || '';
+    }
+
+    const payload = req.payload || {};
+    const targetEmail = document.getElementById('targetEmail');
+    const givenName = document.getElementById('givenName');
+    const familyName = document.getElementById('familyName');
+    const phone = document.getElementById('phone');
+    const reason = document.getElementById('reason');
+
+    if (targetEmail) targetEmail.value = payload.targetEmail || '';
+    if (givenName) givenName.value = payload.givenName || '';
+    if (familyName) familyName.value = payload.familyName || '';
+    if (phone) phone.value = normalizePhoneForInput(payload.phone || '');
+    if (reason) reason.value = payload.reason || '';
+
+    setFeedback('Edita los campos y luego actualiza la solicitud.');
+    clearErrors();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  clearButton?.addEventListener('click', clearAll);
+  window.addEventListener('requests:edit', (event) => {
+    const req = event?.detail;
+    if (!req) return;
+    loadRequestIntoForm(req);
+  });
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!validate()) return;
+
+    setFeedback('Guardando solicitud...');
+
+    const phoneRaw = getVal('phone');
+    const fullPhone = phoneRaw ? `0${phoneRaw}` : '';
+
+    const payload = {
+      type: getVal('reqType'),
+      organizationalUnit: getVal('ou'),
+      payload: {
+        targetEmail: getVal('targetEmail'),
+        phone: fullPhone,
+        givenName: getVal('givenName'),
+        familyName: getVal('familyName'),
+        orgUnitPath: getVal('ou'),
+        reason: getVal('reason'),
+      },
+    };
+
+    try {
+      const isEditing = Boolean(editingRequestId);
+      const url = isEditing ? `/api/requests/${editingRequestId}` : '/api/requests';
+      const body = isEditing ? { action: 'edit', payload: payload.payload } : payload;
+      const response = await fetch(url, {
+        method: isEditing ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setFeedback(data.error || 'No se pudo guardar la solicitud', true);
+        return;
+      }
+      setFeedback(isEditing ? 'Solicitud actualizada correctamente.' : 'Solicitud creada correctamente.');
+      clearAll();
+      window.dispatchEvent(new CustomEvent('requests:reload'));
+    } catch {
+      setFeedback('Error al guardar solicitud', true);
+    }
+  });
+</script>

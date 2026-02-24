@@ -1,0 +1,112 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import RequestForm from '../../components/RequestForm.astro';
+import RequestList from '../../components/RequestList.astro';
+import Alert from '../../components/ui/Alert.astro';
+import { getSessionUser } from '../../utils/auth';
+import { getAuthUrl, generateOauthState, getOrganizationalUnits, findUserByEmail } from '../../utils/googleAdmin';
+
+export const prerender = false;
+
+const user = await getSessionUser(Astro);
+if (!user) {
+  const state = generateOauthState();
+  Astro.cookies.set('oauth_state', state, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600
+  });
+  const authUrl = await getAuthUrl(state);
+  return Astro.redirect(authUrl);
+}
+
+if (user.role === 'miembro') {
+  return Astro.redirect('/?error=acceso_denegado');
+}
+
+let allOrgUnits: Array<{ name: string; path: string; parentPath: string }> = [];
+try {
+  allOrgUnits = await getOrganizationalUnits(user.accessToken);
+} catch (e: any) {
+  console.error('Error al cargar OUs:', e.message);
+}
+
+const localOrgs = allOrgUnits.filter((u) => u.parentPath === '/Organizaciones Locales');
+
+function normalizeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function resolvePresidentOrgPath(
+  currentOrgPath: string,
+  userFullName: string,
+  orgs: Array<{ name: string; path: string; parentPath: string }>
+) {
+  const localOrgPaths = new Set(orgs.map((org) => org.path));
+  if (currentOrgPath && currentOrgPath !== '/' && localOrgPaths.has(currentOrgPath)) {
+    return currentOrgPath;
+  }
+
+  const normalizedFullName = normalizeText(userFullName);
+  if (!normalizedFullName) return currentOrgPath || '';
+
+  const byName = orgs.find((org) => normalizeText(org.name) === normalizedFullName);
+  if (byName) return byName.path;
+
+  return currentOrgPath || '';
+}
+let presidentLockedOrgPath = '';
+let presidentLockedOrgName = '';
+
+if (user.role === 'presidente_local') {
+  try {
+    const directoryUser = await findUserByEmail(user.accessToken, user.email);
+    presidentLockedOrgPath = resolvePresidentOrgPath(
+      directoryUser.organizationalUnit || '',
+      directoryUser.fullName || '',
+      localOrgs
+    );
+    const matchedOrg = localOrgs.find((org) => org.path === presidentLockedOrgPath);
+    presidentLockedOrgName = matchedOrg?.name || directoryUser.organizationalUnitName || '';
+  } catch (e: any) {
+    console.error('Error al obtener OU del presidente local:', e.message);
+  }
+}
+
+const showForm = user.role === 'presidente_local' || user.role === 'administrador';
+
+const ROLE_DESCRIPTIONS: Record<string, string> = {
+  administrador: 'Tienes acceso completo: puedes crear solicitudes, aprobar, rechazar y procesar lotes.',
+  funcionario_nacional: 'Puedes consultar todas las solicitudes y filtrar por organización local.',
+  presidente_local: 'Puedes crear solicitudes y dar seguimiento a las que has realizado.',
+};
+---
+
+<Layout title="Gestión de correos" user={user}>
+  <main class="container mx-auto px-4 py-8 space-y-5">
+    <div>
+      <h1 class="text-2xl font-bold text-foreground">Gestión de cuentas de correo</h1>
+      <p class="text-sm text-muted-foreground mt-1">
+        {ROLE_DESCRIPTIONS[user.role] || ''}
+      </p>
+    </div>
+
+    {showForm && (
+      <RequestForm
+        orgUnits={localOrgs}
+        userRole={user.role}
+        lockedOrgUnitPath={presidentLockedOrgPath}
+        lockedOrgUnitName={presidentLockedOrgName}
+      />
+    )}
+
+    <RequestList userRole={user.role} orgUnits={localOrgs} />
+  </main>
+</Layout>

@@ -1,0 +1,42 @@
+---
+description: Protocolo para calcar patrones visuales desde jci.be y jci.cc sin romper la guía de marca
+globs: ["docs/ui/**", "src/**"]
+alwaysApply: true
+---
+
+# Sitios de referencia (observación + extracción)
+Referencias visuales:
+- JCI Belgium (estructura de landing con hero, CTA, secciones por áreas, footer social). :contentReference[oaicite:15]{index=15}
+- JCI.cc (navegación densa con mega menú, estética institucional moderna). :contentReference[oaicite:16]{index=16}
+
+> IMPORTANTE: No necesitamos copiar código. Necesitamos copiar *patrones* y *decisiones*: spacing, bordes, jerarquía, estilo de botones/cards.
+
+## Protocolo de extracción (obligatorio antes de tocar tokens)
+1) Abre ambos sitios en tu navegador con DevTools.
+2) Extrae (Computed Styles) de 6 elementos:
+   - Section padding (hero y secciones normales)
+   - Container max-width
+   - Card padding + border + radius
+   - Button (height, padding-x, radius, font-size, border)
+   - Inputs (height, padding-x, border, focus ring)
+   - Headings (H1, H2) y body text (font-size/line-height)
+3) Registra TODO en: `docs/ui/reference-audit.md` con esta tabla:
+
+| Elemento | Sitio | Valor | Observación |
+|---|---|---:|---|
+| Section padding (Y) | jci.be |  |  |
+| Card radius | jci.cc |  |  |
+| Button height | jci.cc |  |  |
+
+4) Luego mapea esos valores a tokens en `src/styles/tokens.css` (Tailwind v4 @theme).
+
+## Patrones de layout a replicar (alto nivel)
+- Hero: título grande + texto corto + CTA principal visible. :contentReference[oaicite:17]{index=17}
+- Secciones: headings con jerarquía clara, buen espacio en blanco.
+- Grids: bloques tipo “cards” para categorías/áreas (ej. “Four areas of opportunity”). :contentReference[oaicite:18]{index=18}
+- Footer: enlaces útiles + social + estructura simple. :contentReference[oaicite:19]{index=19}
+
+## Reglas para que sea coherente con JCI
+- Siempre prioriza legibilidad y contraste.
+- Usa JCI Blue como acción primaria.
+- Usa bordes sutiles y radius consistente (una escala, no “cada componente distinto”).

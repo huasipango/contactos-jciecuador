@@ -1,0 +1,30 @@
+---
+description: QA para evitar regressions (SSR + UI)
+globs: ["src/**", "netlify/**", "package.json", "astro.config.*"]
+alwaysApply: true
+---
+
+# QA / Validación (antes de cerrar cambios)
+
+## Comandos mínimos
+
+- `npm run build`
+- `npm run lint` (si existe)
+
+## Rutas críticas (manual)
+
+- Login / callback OAuth (no romper cookies ni redirects)
+- Directorio: tabla, filtros, paginación (solo UI cambia)
+- Solicitudes: CRUD + workflow (solo UI cambia)
+- Créditos: sin errores
+
+## Checklist UI
+
+- Dark mode: contraste, bordes, fondo, texto.
+- Focus visible (teclado) en botones/inputs/links.
+- Spacing consistente entre secciones (no “cada page diferente”).
+- Bordes/radius consistentes con escala definida.
+
+## Regla final
+
+Si algo funcional se rompe: revertir y aislar el cambio de UI que lo causó.

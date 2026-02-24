@@ -1,0 +1,141 @@
+/*
+ * JCI Ecuador — Design Tokens
+ * Source of truth: docs/ui/reference-audit.md + JCI Brand Guidelines v1.4
+ *
+ * Color values stored as raw HSL channels so Tailwind can compose
+ * opacity modifiers: bg-primary/50 → hsl(var(--primary) / 0.5)
+ */
+
+/* ───────────────────────────── Light theme (default) ───────────────────────── */
+:root {
+  /* Brand primitives (HSL channels only) */
+  --jci-blue:   197 100% 42%;   /* #0097D7 */
+  --jci-black:  249 50% 12%;    /* #130F2D */
+  --jci-white:  0 0% 100%;      /* #FFFFFF */
+  --jci-navy:   218 61% 31%;    /* #1F4789 */
+  --jci-teal:   180 40% 54%;    /* #57BCBC */
+  --jci-yellow: 45 87% 50%;     /* #EFC40F */
+
+  /* Semantic tokens (shadcn/ui convention) */
+  --background:            0 0% 100%;
+  --foreground:            249 50% 12%;
+
+  --card:                  0 0% 100%;
+  --card-foreground:       249 50% 12%;
+
+  --popover:               0 0% 100%;
+  --popover-foreground:    249 50% 12%;
+
+  --primary:               197 100% 42%;
+  --primary-foreground:    0 0% 100%;
+
+  --secondary:             218 61% 31%;
+  --secondary-foreground:  0 0% 100%;
+
+  --accent:                180 40% 54%;
+  --accent-foreground:     249 50% 12%;
+
+  --muted:                 200 60% 96%;
+  --muted-foreground:      215 16% 47%;
+
+  --destructive:           0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border:                220 13% 86%;
+  --input:                 220 13% 86%;
+  --ring:                  197 100% 42%;
+
+  --radius:                0.5rem;
+
+  --warning:               45 87% 50%;
+  --warning-foreground:    249 50% 12%;
+}
+
+/* ───────────────────────────── Dark theme ───────────────────────────────────── */
+.dark {
+  --background:            249 50% 8%;
+  --foreground:            210 20% 92%;
+
+  --card:                  249 40% 12%;
+  --card-foreground:       210 20% 92%;
+
+  --popover:               249 40% 12%;
+  --popover-foreground:    210 20% 92%;
+
+  --primary:               197 100% 48%;
+  --primary-foreground:    0 0% 100%;
+
+  --secondary:             218 50% 42%;
+  --secondary-foreground:  0 0% 100%;
+
+  --accent:                180 40% 40%;
+  --accent-foreground:     210 20% 92%;
+
+  --muted:                 249 30% 18%;
+  --muted-foreground:      215 16% 60%;
+
+  --destructive:           0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border:                249 20% 22%;
+  --input:                 249 20% 22%;
+  --ring:                  197 100% 48%;
+
+  --warning:               45 87% 55%;
+  --warning-foreground:    0 0% 100%;
+}
+
+/* ───────────────────────────── Tailwind v4 @theme ──────────────────────────── */
+@theme inline {
+  /* Color utilities: bg-primary, text-foreground, border-border, etc. */
+  --color-background:            hsl(var(--background));
+  --color-foreground:            hsl(var(--foreground));
+
+  --color-card:                  hsl(var(--card));
+  --color-card-foreground:       hsl(var(--card-foreground));
+
+  --color-popover:               hsl(var(--popover));
+  --color-popover-foreground:    hsl(var(--popover-foreground));
+
+  --color-primary:               hsl(var(--primary));
+  --color-primary-foreground:    hsl(var(--primary-foreground));
+
+  --color-secondary:             hsl(var(--secondary));
+  --color-secondary-foreground:  hsl(var(--secondary-foreground));
+
+  --color-accent:                hsl(var(--accent));
+  --color-accent-foreground:     hsl(var(--accent-foreground));
+
+  --color-muted:                 hsl(var(--muted));
+  --color-muted-foreground:      hsl(var(--muted-foreground));
+
+  --color-destructive:           hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-warning:               hsl(var(--warning));
+  --color-warning-foreground:    hsl(var(--warning-foreground));
+
+  --color-border:                hsl(var(--border));
+  --color-input:                 hsl(var(--input));
+  --color-ring:                  hsl(var(--ring));
+
+  /* Brand primitives as utilities: bg-jci-blue, text-jci-navy, etc. */
+  --color-jci-blue:              hsl(var(--jci-blue));
+  --color-jci-black:             hsl(var(--jci-black));
+  --color-jci-white:             hsl(var(--jci-white));
+  --color-jci-navy:              hsl(var(--jci-navy));
+  --color-jci-teal:              hsl(var(--jci-teal));
+  --color-jci-yellow:            hsl(var(--jci-yellow));
+
+  /* Radius scale */
+  --radius-sm:  calc(var(--radius) - 0.25rem);
+  --radius-md:  var(--radius);
+  --radius-lg:  calc(var(--radius) + 0.25rem);
+  --radius-xl:  calc(var(--radius) + 0.5rem);
+
+  /* Font family — Plus Jakarta Sans (JCI official) */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Container */
+  --container-max-width-7xl: 1200px;
+}

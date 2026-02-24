@@ -4,15 +4,22 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "backfill:postgres": "node scripts/backfill-requests-to-postgres.mjs",
+    "db:migrate:test": "bash scripts/run-migrations.sh test",
+    "db:migrate:production": "bash scripts/run-migrations.sh production",
+    "db:status": "bash scripts/migration-status.sh",
+    "db:promote": "bash scripts/promote-to-production.sh"
   },
   "dependencies": {
     "@astrojs/netlify": "^6.0.1",
-    "@astrojs/tailwind": "^5.1.4",
     "@heroicons/react": "^2.2.0",
+    "@neondatabase/serverless": "latest",
+    "@tailwindcss/vite": "^4.2.0",
     "astro": "^5.1.1",
     "canvas-confetti": "^1.9.3",
     "google-auth-library": "^9.7.0",
-    "googleapis": "^144.0.0"
+    "googleapis": "^144.0.0",
+    "tailwindcss": "^4.2.0"
   }
 }

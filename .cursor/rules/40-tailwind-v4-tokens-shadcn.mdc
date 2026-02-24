@@ -1,0 +1,59 @@
+---
+description: Tokens Tailwind v4 (@theme) + shadcn/ui compartiendo la misma fuente de verdad
+globs:
+  [
+    "src/styles/**",
+    "src/components/ui/**",
+    "src/components/ui-react/**",
+    "**/*.tsx",
+    "**/*.astro",
+  ]
+alwaysApply: true
+---
+
+# Token-driven UI (Tailwind v4 + shadcn/ui)
+
+## Fuente de verdad
+
+- Tokens en CSS: `src/styles/tokens.css`
+- Debe existir:
+  - `:root { ... }`
+  - `.dark { ... }`
+  - `@theme inline { ... }` (mapear variables semánticas a utilidades Tailwind)
+
+## Convención de tokens (semánticos)
+
+Usar naming compatible con shadcn:
+
+- --background / --foreground
+- --card / --card-foreground
+- --popover / --popover-foreground
+- --primary / --primary-foreground
+- --secondary / --secondary-foreground
+- --muted / --muted-foreground
+- --accent / --accent-foreground
+- --destructive / --destructive-foreground
+- --border / --input / --ring
+- --radius
+
+## Mapeo obligatorio a marca JCI
+
+- primary debe derivar de JCI Blue (#0097D7).
+- foreground debe derivar de JCI Black (#130F2D).
+- background debe ser blanco o “off-white” MUY sutil, sin salirse de la marca.
+- accents: teal y navy; yellow solo para highlights puntuales. :contentReference[oaicite:20]{index=20}
+
+## En componentes (Astro y:contentReference[oaicite:21]{index=21}hex/rgb hardcodeados.
+
+- Obligatorio: usar utilidades con tokens (ej. bg-background, text-foreground, border-border, ring-ring).
+- Si algo no existe, primero crear el token.
+
+## Resultado esperado (demo)
+
+- Página `ui-demo` que muestre:
+  - colores (light/dark)
+  - botones
+  - inputs
+  - cards
+  - tabla (estilo base)
+- Debe verse consistente con los sitios de referencia y la guía JCI.

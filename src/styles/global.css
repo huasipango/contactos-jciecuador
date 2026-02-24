@@ -1,3 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities; 
+@import "tailwindcss";
+@import "./tokens.css";
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+  }
+}

@@ -1,14 +1,15 @@
 import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 
 import netlify from '@astrojs/netlify';
 
 export default defineConfig({
-  integrations: [tailwind()],
+  integrations: [],
   site: 'https://contactos-jciecuador.netlify.app',
   output: 'server',
 
   vite: {
+    plugins: [tailwindcss()],
     ssr: {
       noExternal: ['canvas-confetti']
     }
