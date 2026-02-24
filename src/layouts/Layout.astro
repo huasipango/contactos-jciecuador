@@ -58,7 +58,7 @@ const currentPath = Astro.url.pathname;
     <meta name="referrer" content="origin" />
     <link rel="home" href="https://jciecuador.com" />
 
-    <!-- Color del tema para mÃ³viles â€” JCI Blue -->
+    <!-- Color del tema para mÃ³viles âÿÿ JCI Blue -->
     <meta name="theme-color" content="#0097D7" />
   </head>
   <body class="min-h-screen flex flex-col">
@@ -82,7 +82,7 @@ const currentPath = Astro.url.pathname;
 <script>
   const themeToggle = document.getElementById('theme-toggle');
 
-  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+  if (localStorage.theme === 'dark') {
     document.documentElement.classList.add('dark');
   } else {
     document.documentElement.classList.remove('dark');
