@@ -257,9 +257,10 @@ export async function appendAuditEvent(event: Omit<RequestAuditEvent, 'id' | 'cr
   return mapAuditRow(rows[0]);
 }
 
-export async function withExecutionLock<T>(task: () => Promise<T>): Promise<T> {
+export async function withExecutionLock<T>(task: () => Promise<T>, key = DEFAULT_LOCK_KEY): Promise<T> {
   const sql = getSqlClient();
-  const lockKey = process.env.EXECUTION_LOCK_KEY || import.meta.env.EXECUTION_LOCK_KEY || DEFAULT_LOCK_KEY;
+  const baseKey = process.env.EXECUTION_LOCK_KEY || import.meta.env.EXECUTION_LOCK_KEY || DEFAULT_LOCK_KEY;
+  const lockKey = `${baseKey}:${key}`;
   const ttlValue = Number(process.env.EXECUTION_LOCK_TTL_SECONDS || import.meta.env.EXECUTION_LOCK_TTL_SECONDS || DEFAULT_LOCK_TTL_SECONDS);
   const ttlSeconds = Number.isFinite(ttlValue) && ttlValue > 0 ? ttlValue : DEFAULT_LOCK_TTL_SECONDS;
   const holderId = randomUUID();

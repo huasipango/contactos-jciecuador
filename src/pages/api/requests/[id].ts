@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getSessionUser, requireRole } from '../../../utils/auth';
 import { getRequestById, updateRequestById, appendAuditEvent, deleteRequestById } from '../../../utils/requestStore';
-import { approveRequest, rejectRequest, executeRequest } from '../../../utils/requestWorkflow';
+import { approveAndExecuteRequest, rejectRequest } from '../../../utils/requestWorkflow';
 import { sendRequestSummaryEmail } from '../../../utils/notifications';
 
 const EDITABLE_STATUSES = new Set(['pending']);
@@ -108,24 +108,29 @@ export const PATCH: APIRoute = async (context) => {
     if (!requireRole(user.role, ['administrador'])) {
       return new Response(JSON.stringify({ error: 'Solo administradores pueden aprobar' }), { status: 403 });
     }
-    const approved = await approveRequest(id, user.email);
-    if (!approved) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });
+    const request = await approveAndExecuteRequest(id, user.accessToken, user.email);
+    if (!request) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });
 
-    const executed = await executeRequest(approved.id, user.accessToken, user.email, false);
-    if (!executed) {
-      return new Response(JSON.stringify({ error: 'No se pudo ejecutar la solicitud aprobada' }), { status: 500 });
+    if (request.status === 'executing') {
+      return new Response(JSON.stringify({
+        request,
+        message: 'Solicitud en ejecución. Actualiza en unos segundos para ver el estado final.'
+      }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    if (executed.status === 'error') {
-      await sendRequestSummaryEmail(executed, user.email, 'Solicitud aprobada, pero falló al ejecutarse');
+    if (request.status === 'error') {
+      await sendRequestSummaryEmail(request, user.email, 'Solicitud aprobada, pero falló al ejecutarse');
       return new Response(JSON.stringify({
-        error: executed.error || 'La solicitud se aprobó, pero ocurrió un error al ejecutar la acción',
-        request: executed
+        error: request.error || 'La solicitud se aprobó, pero ocurrió un error al ejecutar la acción',
+        request
       }), { status: 500 });
     }
 
-    await sendRequestSummaryEmail(executed, user.email, 'Solicitud aprobada y ejecutada');
-    return new Response(JSON.stringify({ request: executed }), {
+    await sendRequestSummaryEmail(request, user.email, 'Solicitud aprobada y ejecutada');
+    return new Response(JSON.stringify({ request }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });

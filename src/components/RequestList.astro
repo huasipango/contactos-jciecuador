@@ -314,7 +314,12 @@ const isPresident = userRole === 'presidente_local';
         if (req.status === 'pending') {
           if (cfg.isAdmin) {
             actionContainer?.appendChild(makeBtn('Aprobar', 'bg-green-600 text-white hover:bg-green-700', async () => {
-              await patchRequest(req.id, { action: 'approve' });
+              const response = await patchRequest(req.id, { action: 'approve' });
+              const updatedStatus = response?.request?.status;
+              if (updatedStatus === 'executing') {
+                setFeedback(response?.message || 'Solicitud aprobada. Está en ejecución.');
+                return;
+              }
               setFeedback('Solicitud aprobada y ejecutada.');
             }));
             actionContainer?.appendChild(makeBtn('Rechazar', 'bg-destructive text-destructive-foreground hover:bg-destructive/90', async () => {

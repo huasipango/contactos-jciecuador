@@ -21,6 +21,8 @@ const AUTO_EXECUTE_ACTIONS = (import.meta.env.AUTO_EXECUTE_ACTIONS || 'update_ph
   .split(',')
   .map((entry) => entry.trim()) as RequestType[];
 const REQUEST_BATCH_SIZE = Number(import.meta.env.REQUEST_BATCH_SIZE || 20);
+const EXECUTION_RETRY_ATTEMPTS = Number(import.meta.env.EXECUTION_RETRY_ATTEMPTS || 5);
+const EXECUTION_RETRY_DELAY_MS = Number(import.meta.env.EXECUTION_RETRY_DELAY_MS || 600);
 
 export function resolveExecutionMode(type: RequestType): 'automatic' | 'manual_approval' {
   return AUTO_EXECUTE_ACTIONS.includes(type) ? 'automatic' : 'manual_approval';
@@ -28,6 +30,15 @@ export function resolveExecutionMode(type: RequestType): 'automatic' | 'manual_a
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isExecutionLockError(error: unknown) {
+  const message = (error as Error | undefined)?.message || '';
+  return message.includes('Ya existe una ejecución en curso');
 }
 
 function ensureFullNamePolicy(givenName = '', familyName = '') {
@@ -179,7 +190,47 @@ export async function executeRequest(requestId: string, accessToken: string, act
       });
       return updated;
     }
-  });
+  }, `request:${request.id}`);
+}
+
+async function executeRequestWithRetry(requestId: string, accessToken: string, actor: string, dryRun = false) {
+  let lastError: unknown = null;
+  const attempts = Number.isFinite(EXECUTION_RETRY_ATTEMPTS) && EXECUTION_RETRY_ATTEMPTS > 0
+    ? EXECUTION_RETRY_ATTEMPTS
+    : 5;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await executeRequest(requestId, accessToken, actor, dryRun);
+    } catch (error) {
+      lastError = error;
+      if (!isExecutionLockError(error) || attempt === attempts) {
+        throw error;
+      }
+      await sleep(EXECUTION_RETRY_DELAY_MS);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('No se pudo ejecutar la solicitud');
+}
+
+export async function approveAndExecuteRequest(requestId: string, accessToken: string, actor: string) {
+  const current = await getRequestById(requestId);
+  if (!current) return null;
+
+  if (current.status === 'executed' || current.status === 'executing') {
+    return current;
+  }
+
+  if (current.status === 'approved') {
+    return executeRequestWithRetry(requestId, accessToken, actor, false);
+  }
+
+  if (current.status === 'pending') {
+    const approved = await approveRequest(requestId, actor);
+    if (!approved) return null;
+    return executeRequestWithRetry(requestId, accessToken, actor, false);
+  }
+
+  throw new Error(`No se puede aprobar/ejecutar una solicitud en estado ${current.status}`);
 }
 
 export async function processPendingBatch(accessToken: string, actor: string, dryRun = false) {

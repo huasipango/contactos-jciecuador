@@ -10,7 +10,7 @@ type RequestStore = {
   updateRequestById: (id: string, updater: (current: WorkspaceRequest) => WorkspaceRequest) => Promise<WorkspaceRequest | null>;
   deleteRequestById: (id: string) => Promise<WorkspaceRequest | null>;
   appendAuditEvent: (event: Omit<RequestAuditEvent, 'id' | 'createdAt'>) => Promise<RequestAuditEvent>;
-  withExecutionLock: <T>(task: () => Promise<T>) => Promise<T>;
+  withExecutionLock: <T>(task: () => Promise<T>, key?: string) => Promise<T>;
 };
 
 function resolveStoreMode() {
@@ -53,6 +53,6 @@ export async function appendAuditEvent(event: Omit<RequestAuditEvent, 'id' | 'cr
   return resolveStore().appendAuditEvent(event);
 }
 
-export async function withExecutionLock<T>(task: () => Promise<T>): Promise<T> {
-  return resolveStore().withExecutionLock(task);
+export async function withExecutionLock<T>(task: () => Promise<T>, key?: string): Promise<T> {
+  return resolveStore().withExecutionLock(task, key);
 }

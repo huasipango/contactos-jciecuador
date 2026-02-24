@@ -11,7 +11,10 @@ interface StoreShape {
 
 const DATA_DIR = resolve(process.cwd(), '.data');
 const STORE_FILE = resolve(DATA_DIR, 'requests-store.json');
-const LOCK_FILE = resolve(DATA_DIR, 'execution.lock');
+function lockFilePath(key: string) {
+  const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return resolve(DATA_DIR, `execution.${safeKey}.lock`);
+}
 
 const EMPTY_STORE: StoreShape = { requests: [], auditEvents: [] };
 
@@ -95,18 +98,19 @@ export async function appendAuditEvent(event: Omit<RequestAuditEvent, 'id' | 'cr
   return auditEvent;
 }
 
-export async function withExecutionLock<T>(task: () => Promise<T>): Promise<T> {
+export async function withExecutionLock<T>(task: () => Promise<T>, key = 'global_execution'): Promise<T> {
   await ensureStore();
-  if (existsSync(LOCK_FILE)) {
+  const lockFile = lockFilePath(key);
+  if (existsSync(lockFile)) {
     throw new Error('Ya existe una ejecución en curso. Intenta nuevamente en unos segundos.');
   }
 
-  await writeFile(LOCK_FILE, String(Date.now()), 'utf-8');
+  await writeFile(lockFile, String(Date.now()), 'utf-8');
   try {
     return await task();
   } finally {
-    if (existsSync(LOCK_FILE)) {
-      await unlink(LOCK_FILE);
+    if (existsSync(lockFile)) {
+      await unlink(lockFile);
     }
   }
 }
